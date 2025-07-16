@@ -151,21 +151,11 @@
                 title: row["Name"] || "Unnamed",
                 icon: propertyIcons[iconKey] || "http://maps.google.com/mapfiles/ms/icons/pink-dot.png"
               });
+
+              let infoContent = `<div class="info-window">`;
               headers.slice(0, 15).forEach(h => {
-  const value = row[h] || "N/A";
-  const isUrl = typeof value === "string" && value.startsWith("http");
-
-  if (isUrl) {
-    infoContent += `<strong>${h}:</strong> <a href="${value}" target="_blank" rel="noopener noreferrer">${value}</a><br/>`;
-  } else {
-    infoContent += `<strong>${h}:</strong> ${value}<br/>`;
-  }
-});
-if (row["Image URL"]) {
-  infoContent += `<br/><img src="${row["Image URL"]}" alt="Property Image" />`;
-}
-infoContent += `</div>`;
-
+                infoContent += `<strong>${h}:</strong> ${row[h] || "N/A"}<br/>`;
+              });
               if (row["Image URL"]) {
                 infoContent += `<br/><img src="${row["Image URL"]}" alt="Property Image" />`;
               }
