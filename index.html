@@ -157,16 +157,9 @@
 headers.slice(0, 15).forEach(h => {
   const value = row[h] || "N/A";
   const isUrl = typeof value === "string" && value.startsWith("http");
-const labelMap = {
-  "ARB Folder Link (Drive)": "ARB",
-  "Photo Archive (Drive)": "Gallery"
-};
-
-const label = labelMap[h] || "View";
-infoContent += `<strong>${h}:</strong> <a href="${value}" target="_blank" rel="noopener noreferrer" style="...">${label}</a><br/>`;
 
   if (isUrl) {
-    infoContent += `<strong>${h}:</strong> <a href="${value}" target="_blank" rel="noopener noreferrer" style="display:inline-block;margin:4px 0;padding:6px 12px;background:#007BFF;color:white;border:none;border-radius:4px;text-decoration:none;font-size:13px;font-family:inherit;">View</a><br/>`;
+    infoContent += `<strong>${h}:</strong> <a href="${value}" target="_blank" rel="noopener noreferrer">Link</a><br/>`;
   } else {
     infoContent += `<strong>${h}:</strong> ${value}<br/>`;
   }
@@ -177,7 +170,6 @@ if (row["Image URL"]) {
 }
 
 infoContent += `</div>`;
-              
 
               const infoWindow = new google.maps.InfoWindow({ content: infoContent });
               marker.addListener("click", () => infoWindow.open(map, marker));
