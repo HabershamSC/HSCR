@@ -161,6 +161,11 @@
     infoContent += `<strong>${h}:</strong> ${value}<br/>`;
   }
 });
+if (row["Image URL"]) {
+  infoContent += `<br/><img src="${row["Image URL"]}" alt="Property Image" />`;
+}
+infoContent += `</div>`;
+
               if (row["Image URL"]) {
                 infoContent += `<br/><img src="${row["Image URL"]}" alt="Property Image" />`;
               }
