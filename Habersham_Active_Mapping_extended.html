@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Habersham Active Mapping</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBxUzPZYFuNou4HVQlVcrvkIUgHWbGuJd0"></script>
+    <style>
+      html, body, #map {
+        height: 100%;
+        margin: 0;
+        padding: 0;
+      }
+      #filters {
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        z-index: 5;
+        background: white;
+        padding: 10px;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+        font-family: Arial, sans-serif;
+      }
+      .info-window {
+        font-family: Arial, sans-serif;
+        line-height: 1.5;
+        background-color: rgba(255, 255, 255, 0.9);
+        padding: 8px;
+        border-radius: 4px;
+      }
+      .info-window strong {
+        display: inline-block;
+        width: 140px;
+        color: #333;
+      }
+      .info-window img {
+        max-width: 100%;
+        margin-top: 8px;
+        border-radius: 4px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+      }
+    </style>
+  </head>
+  <body>
+    <div id="filters">
+      <label>
+        Lot Number:
+        <select id="lotNumberFilter">
+          <option value="">All</option>
+        </select>
+      </label>
+      <label>
+        Property Type:
+        <select id="propertyTypeFilter">
+          <option value="">All</option>
+        </select>
+      </label>
+      <label>
+        Status:
+        <select id="statusFilter">
+          <option value="">All</option>
+        </select>
+      </label>
+      <label>
+        Stage:
+        <select id="stageFilter">
+          <option value="">All</option>
+        </select>
+      </label>
+      <label>
+        Builder:
+        <select id="builderFilter">
+          <option value="">All</option>
+        </select>
+      </label>
+    </div>
+    <div id="map"></div>
+
+    <script>
+      const propertyIcons = {
+        "single family": "http://maps.google.com/mapfiles/ms/icons/red-dot.png",
+        "live / work": "http://maps.google.com/mapfiles/ms/icons/blue-dot.png",
+        "lot": "http://maps.google.com/mapfiles/ms/icons/yellow-dot.png",
+        "condominium": "http://maps.google.com/mapfiles/ms/icons/green-dot.png",
+        "townhome": "http://maps.google.com/mapfiles/ms/icons/orange-dot.png",
+        "apartments": "http://maps.google.com/mapfiles/ms/icons/purple-dot.png"
+      };
+
+      function normalizeKey(str) {
+        return (str || "").trim().toLowerCase();
+      }
+
+      let allMarkers = [];
+
+      async function initMap() {
+        const sheetId = "1ved7oTZAR1PNFKrAgOmTwAx0DdjcoPEPnvHZCP02msU";
+        const apiKey = "AIzaSyBxUzPZYFuNou4HVQlVcrvkIUgHWbGuJd0";
+        const sheetName = "Map";
+        const url = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${sheetName}?alt=json&key=${apiKey}`;
+
+        const response = await fetch(url);
+        const json = await response.json();
+        const rows = json.values;
+        const headers = rows[0];
+        const data = rows.slice(1).map(row => {
+          const obj = {};
+          headers.forEach((h, i) => obj[h] = row[i] || "");
+          return obj;
+        });
+
+        const map = new google.maps.Map(document.getElementById("map"), {
+          zoom: 16,
+          center: { lat: 32.425980, lng: -80.777523 },
+          mapTypeId: "satellite",
+          mapTypeControl: true,
+          mapTypeControlOptions: {
+            style: google.maps.MapTypeControlStyle.HORIZONTAL_BAR,
+            position: google.maps.ControlPosition.TOP_RIGHT
+          }
+        });
+
+        const lotNumberSet = new Set();
+        const statusSet = new Set();
+        const builderSet = new Set();
+        const stageSet = new Set();
+        const propertyTypeSet = new Set();
+
+        data.forEach(row => {
+          const latlng = row["Lat / Long"];
+          const lot = row["Lot Number"] || "";
+          const status = normalizeKey(row["Lot Status"]);
+          const builder = row["Builder"] || "";
+          const stage = row["Stage"] || "";
+          const rawType = row["Property Type"] || "";
+          const iconKey = normalizeKey(rawType);
+
+          if (lot) lotNumberSet.add(lot);
+          if (status) statusSet.add(row["Lot Status"]);
+          if (builder) builderSet.add(builder);
+          if (stage) stageSet.add(stage);
+          if (rawType) propertyTypeSet.add(rawType);
+
+          if (latlng && latlng.includes(",")) {
+            const [latStr, lngStr] = latlng.split(",");
+            const lat = parseFloat(latStr.trim());
+            const lng = parseFloat(lngStr.trim());
+            if (!isNaN(lat) && !isNaN(lng)) {
+              const marker = new google.maps.Marker({
+                position: { lat, lng },
+                map,
+                title: row["Name"] || "Unnamed",
+                icon: propertyIcons[iconKey] || "http://maps.google.com/mapfiles/ms/icons/pink-dot.png"
+              });
+
+              let infoContent = `<div class="info-window">`;
+              headers.forEach((h, i) => {
+  if (i <= 14 && h && h !== "Image URL") {
+    infoContent += `<strong>${h}:</strong> ${row[h] || "N/A"}<br/>`;
+  }
+});
+              if (row["Image URL"]) {
+                infoContent += `<br/><img src="${row["Image URL"]}" alt="Property Image" />`;
+              }
+              infoContent += `</div>`;
+
+              const infoWindow = new google.maps.InfoWindow({ content: infoContent });
+              marker.addListener("click", () => infoWindow.open(map, marker));
+
+              marker.customData = {
+                lotNumber: lot,
+                status,
+                builder,
+                stage,
+                propertyType: rawType
+              };
+
+              allMarkers.push(marker);
+            }
+          }
+        });
+
+        populateFilters([...lotNumberSet], [...statusSet], [...builderSet], [...stageSet], [...propertyTypeSet]);
+        attachFilterListeners();
+      }
+
+      function populateFilters(lotNumbers, statuses, builders, stages, propertyTypes) {
+        const lotNumberFilter = document.getElementById("lotNumberFilter");
+        lotNumbers.forEach(lot => {
+          const opt = document.createElement("option");
+          opt.value = lot;
+          opt.textContent = lot;
+          lotNumberFilter.appendChild(opt);
+        });
+
+        const statusFilter = document.getElementById("statusFilter");
+        statuses.forEach(status => {
+          const opt = document.createElement("option");
+          opt.value = normalizeKey(status);
+          opt.textContent = status;
+          statusFilter.appendChild(opt);
+        });
+
+        const builderFilter = document.getElementById("builderFilter");
+        builders.forEach(builder => {
+          const opt = document.createElement("option");
+          opt.value = builder;
+          opt.textContent = builder;
+          builderFilter.appendChild(opt);
+        });
+
+        const stageFilter = document.getElementById("stageFilter");
+        stages.forEach(stage => {
+          const opt = document.createElement("option");
+          opt.value = stage;
+          opt.textContent = stage;
+          stageFilter.appendChild(opt);
+        });
+
+        const propertyTypeFilter = document.getElementById("propertyTypeFilter");
+        propertyTypes.forEach(type => {
+          const opt = document.createElement("option");
+          opt.value = type;
+          opt.textContent = type;
+          propertyTypeFilter.appendChild(opt);
+        });
+      }
+
+      function attachFilterListeners() {
+        document.getElementById("lotNumberFilter").addEventListener("change", filterMarkers);
+        document.getElementById("statusFilter").addEventListener("change", filterMarkers);
+        document.getElementById("builderFilter").addEventListener("change", filterMarkers);
+        document.getElementById("stageFilter").addEventListener("change", filterMarkers);
+        document.getElementById("propertyTypeFilter").addEventListener("change", filterMarkers);
+      }
+
+      function filterMarkers() {
+        const lotNumberVal = document.getElementById("lotNumberFilter").value;
+        const statusVal = document.getElementById("statusFilter").value;
+        const builderVal = document.getElementById("builderFilter").value;
+        const stageVal = document.getElementById("stageFilter").value;
+        const propertyTypeVal = document.getElementById("propertyTypeFilter").value;
+
+        allMarkers.forEach(marker => {
+          const matchLot = !lotNumberVal || normalizeKey(marker.customData.lotNumber) === normalizeKey(lotNumberVal);
+          const matchStatus = !statusVal || normalizeKey(marker.customData.status) === normalizeKey(statusVal);
+          const matchBuilder = !builderVal || normalizeKey(marker.customData.builder) === normalizeKey(builderVal);
+          const matchStage = !stageVal || normalizeKey(marker.customData.stage) === normalizeKey(stageVal);
+          const matchType = !propertyTypeVal || normalizeKey(marker.customData.propertyType) === normalizeKey(propertyTypeVal);
+
+          marker.setVisible(matchLot && matchStatus && matchBuilder && matchStage && matchType);
+        });
+      }
+
+      window.onload = initMap;
+    </script>
+  </body>
+</html>
