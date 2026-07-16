@@ -1,265 +1,764 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
   <head>
     <title>Habersham Active Mapping</title>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBxUzPZYFuNou4HVQlVcrvkIUgHWbGuJd0"></script>
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1"
+    />
+
     <style>
-      html, body, #map {
+      :root {
+        font-family: Arial, Helvetica, sans-serif;
+        color: #222;
+        background: #f3f3f1;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        width: 100%;
         height: 100%;
         margin: 0;
-        padding: 0;
       }
-      #filters {
+
+      body {
+        overflow: hidden;
+      }
+
+      .app {
+        display: grid;
+        grid-template-columns: 340px minmax(0, 1fr);
+        width: 100%;
+        height: 100%;
+      }
+
+      .sidebar {
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+        background: #fff;
+        border-right: 1px solid #d8d8d4;
+        z-index: 2;
+      }
+
+      .sidebar-header {
+        padding: 20px;
+        border-bottom: 1px solid #e2e2de;
+      }
+
+      .sidebar-header h1 {
+        margin: 0 0 6px;
+        font-size: 21px;
+        line-height: 1.2;
+      }
+
+      .sidebar-header p {
+        margin: 0;
+        color: #666;
+        font-size: 13px;
+      }
+
+      .filters {
+        display: grid;
+        gap: 10px;
+        padding: 16px 20px;
+        border-bottom: 1px solid #e2e2de;
+      }
+
+      .filter-field {
+        display: grid;
+        gap: 5px;
+      }
+
+      .filter-field label {
+        font-size: 12px;
+        font-weight: 700;
+        color: #555;
+      }
+
+      .filter-field select {
+        width: 100%;
+        min-height: 38px;
+        padding: 7px 9px;
+        border: 1px solid #c9c9c4;
+        border-radius: 4px;
+        background: #fff;
+        font: inherit;
+      }
+
+      .results-summary {
+        padding: 12px 20px;
+        font-size: 13px;
+        color: #555;
+        border-bottom: 1px solid #e2e2de;
+      }
+
+      .property-list {
+        flex: 1;
+        min-height: 0;
+        overflow-y: auto;
+        padding: 12px;
+      }
+
+      .property-card {
+        width: 100%;
+        margin: 0 0 10px;
+        padding: 14px;
+        text-align: left;
+        background: #fff;
+        border: 1px solid #deded9;
+        border-radius: 6px;
+        cursor: pointer;
+      }
+
+      .property-card:hover,
+      .property-card:focus {
+        border-color: #777;
+        outline: none;
+      }
+
+      .property-card.is-selected {
+        border-color: #222;
+        box-shadow: 0 0 0 1px #222;
+      }
+
+      .property-card-title {
+        margin: 0 0 6px;
+        font-size: 16px;
+      }
+
+      .property-card-meta {
+        display: grid;
+        gap: 3px;
+        color: #555;
+        font-size: 13px;
+        line-height: 1.35;
+      }
+
+      .map-panel {
+        position: relative;
+        min-width: 0;
+        min-height: 0;
+        background: #ddd;
+      }
+
+      .land-id-frame {
+        width: 100%;
+        height: 100%;
+        border: 0;
+        display: block;
+      }
+
+      .detail-panel {
         position: absolute;
-        top: 10px;
-        left: 10px;
-        z-index: 5;
-        background: white;
-        padding: 10px;
-        box-shadow: 0 2px 6px rgba(0,0,0,0.3);
-        font-family: Arial, sans-serif;
+        top: 16px;
+        right: 16px;
+        width: min(360px, calc(100% - 32px));
+        max-height: calc(100% - 32px);
+        overflow-y: auto;
+        padding: 18px;
+        background: rgba(255, 255, 255, 0.96);
+        border-radius: 7px;
+        box-shadow: 0 4px 18px rgba(0, 0, 0, 0.24);
       }
-      .info-window {
-        font-family: Arial, sans-serif;
+
+      .detail-panel[hidden] {
+        display: none;
+      }
+
+      .detail-close {
+        float: right;
+        border: 0;
+        background: transparent;
+        font-size: 24px;
+        line-height: 1;
+        cursor: pointer;
+      }
+
+      .detail-panel h2 {
+        margin: 0 32px 12px 0;
+        font-size: 20px;
+      }
+
+      .detail-grid {
+        display: grid;
+        grid-template-columns: 120px minmax(0, 1fr);
+        gap: 7px 10px;
+        font-size: 14px;
+        line-height: 1.4;
+      }
+
+      .detail-grid dt {
+        font-weight: 700;
+        color: #555;
+      }
+
+      .detail-grid dd {
+        margin: 0;
+        overflow-wrap: anywhere;
+      }
+
+      .property-image {
+        width: 100%;
+        height: auto;
+        margin: 14px 0 0;
+        border-radius: 5px;
+        display: block;
+      }
+
+      .empty-state,
+      .error-state {
+        padding: 24px 12px;
+        color: #666;
+        text-align: center;
         line-height: 1.5;
-        background-color: rgba(255, 255, 255, 0.9);
-        padding: 8px;
-        border-radius: 4px;
       }
-      .info-window strong {
-        display: inline-block;
-        width: 140px;
-        color: #333;
+
+      .data-updated {
+        padding: 10px 20px;
+        border-top: 1px solid #e2e2de;
+        font-size: 11px;
+        color: #777;
       }
-      .info-window img {
-        max-width: 100%;
-        margin-top: 8px;
-        border-radius: 4px;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+
+      @media (max-width: 800px) {
+        body {
+          overflow: auto;
+        }
+
+        .app {
+          display: flex;
+          flex-direction: column-reverse;
+          height: auto;
+          min-height: 100%;
+        }
+
+        .sidebar {
+          height: auto;
+          min-height: 50vh;
+          border-right: 0;
+        }
+
+        .map-panel {
+          height: 55vh;
+          min-height: 420px;
+        }
+
+        .detail-panel {
+          position: absolute;
+          top: 10px;
+          right: 10px;
+          width: calc(100% - 20px);
+          max-height: calc(100% - 20px);
+        }
       }
     </style>
   </head>
+
   <body>
-    <div id="filters">
-      <label>
-        Lot Number:
-        <select id="lotNumberFilter">
-          <option value="">All</option>
-        </select>
-      </label>
-      <label>
-        Property Type:
-        <select id="propertyTypeFilter">
-          <option value="">All</option>
-        </select>
-      </label>
-      <label>
-        Status:
-        <select id="statusFilter">
-          <option value="">All</option>
-        </select>
-      </label>
-      <label>
-        Stage:
-        <select id="stageFilter">
-          <option value="">All</option>
-        </select>
-      </label>
-      <label>
-        Builder:
-        <select id="builderFilter">
-          <option value="">All</option>
-        </select>
-      </label>
-    </div>
-    <div id="map"></div>
+    <main class="app">
+      <aside class="sidebar">
+        <header class="sidebar-header">
+          <h1>Habersham Active Mapping</h1>
+          <p>Select a property to view its current information.</p>
+        </header>
+
+        <section class="filters" aria-label="Property filters">
+          <div class="filter-field">
+            <label for="lotNumberFilter">Lot Number</label>
+            <select id="lotNumberFilter">
+              <option value="">All</option>
+            </select>
+          </div>
+
+          <div class="filter-field">
+            <label for="propertyTypeFilter">Property Type</label>
+            <select id="propertyTypeFilter">
+              <option value="">All</option>
+            </select>
+          </div>
+
+          <div class="filter-field">
+            <label for="statusFilter">Status</label>
+            <select id="statusFilter">
+              <option value="">All</option>
+            </select>
+          </div>
+
+          <div class="filter-field">
+            <label for="stageFilter">Stage</label>
+            <select id="stageFilter">
+              <option value="">All</option>
+            </select>
+          </div>
+
+          <div class="filter-field">
+            <label for="builderFilter">Builder</label>
+            <select id="builderFilter">
+              <option value="">All</option>
+            </select>
+          </div>
+        </section>
+
+        <div
+          id="resultsSummary"
+          class="results-summary"
+          aria-live="polite"
+        >
+          Loading properties…
+        </div>
+
+        <section
+          id="propertyList"
+          class="property-list"
+          aria-label="Property results"
+        ></section>
+
+        <div id="dataUpdated" class="data-updated"></div>
+      </aside>
+
+      <section class="map-panel">
+        <iframe
+          class="land-id-frame"
+          src="https://id.land/maps/5ffa4ed25a9a8323561274ff9a47dc97/embed"
+          title="Habersham Land id map"
+          loading="eager"
+          allowfullscreen
+        ></iframe>
+
+        <article id="detailPanel" class="detail-panel" hidden>
+          <button
+            id="detailClose"
+            class="detail-close"
+            type="button"
+            aria-label="Close property details"
+          >
+            ×
+          </button>
+
+          <h2 id="detailTitle"></h2>
+          <div id="detailContent"></div>
+        </article>
+      </section>
+    </main>
 
     <script>
-      const propertyIcons = {
-        "single family": "http://maps.google.com/mapfiles/ms/icons/red-dot.png",
-        "live / work": "http://maps.google.com/mapfiles/ms/icons/blue-dot.png",
-        "lot": "http://maps.google.com/mapfiles/ms/icons/yellow-dot.png",
-        "condominium": "http://maps.google.com/mapfiles/ms/icons/green-dot.png",
-        "townhome": "http://maps.google.com/mapfiles/ms/icons/orange-dot.png",
-        "apartments": "http://maps.google.com/mapfiles/ms/icons/purple-dot.png"
-      };
+      let allProperties = [];
+      let visibleProperties = [];
+      let selectedLotId = null;
 
-      function normalizeKey(str) {
-        return (str || "").trim().toLowerCase();
+      function normalizeKey(value) {
+        return String(value || "").trim().toLowerCase();
       }
 
-      let allMarkers = [];
+      function formatPrice(value) {
+        const number = Number(value);
 
-      async function initMap() {
-        const sheetId = "1ved7oTZAR1PNFKrAgOmTwAx0DdjcoPEPnvHZCP02msU";
-        const apiKey = "AIzaSyBxUzPZYFuNou4HVQlVcrvkIUgHWbGuJd0";
-        const sheetName = "Map";
-        const url = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${sheetName}?alt=json&key=${apiKey}`;
+        if (!Number.isFinite(number) || number <= 0) {
+          return "";
+        }
 
-        const response = await fetch(url);
-        const json = await response.json();
-        const rows = json.values;
-        const headers = rows[0];
-        const data = rows.slice(1).map(row => {
-          const obj = {};
-          headers.forEach((h, i) => obj[h] = row[i] || "");
-          return obj;
-        });
-
-        const map = new google.maps.Map(document.getElementById("map"), {
-          zoom: 16,
-          center: { lat: 32.425980, lng: -80.777523 },
-          mapTypeId: "satellite",
-          mapTypeControl: true,
-          mapTypeControlOptions: {
-            style: google.maps.MapTypeControlStyle.HORIZONTAL_BAR,
-            position: google.maps.ControlPosition.TOP_RIGHT
-          }
-        });
-
-        const lotNumberSet = new Set();
-        const statusSet = new Set();
-        const builderSet = new Set();
-        const stageSet = new Set();
-        const propertyTypeSet = new Set();
-
-        data.forEach(row => {
-          const latlng = row["Lat / Long"];
-          const lot = row["Lot Number"] || "";
-          const status = normalizeKey(row["Lot Status"]);
-          const builder = row["Builder"] || "";
-          const stage = row["Stage"] || "";
-          const rawType = row["Property Type"] || "";
-          const iconKey = normalizeKey(rawType);
-
-          if (lot) lotNumberSet.add(lot);
-          if (status) statusSet.add(row["Lot Status"]);
-          if (builder) builderSet.add(builder);
-          if (stage) stageSet.add(stage);
-          if (rawType) propertyTypeSet.add(rawType);
-
-          if (latlng && latlng.includes(",")) {
-            const [latStr, lngStr] = latlng.split(",");
-            const lat = parseFloat(latStr.trim());
-            const lng = parseFloat(lngStr.trim());
-            if (!isNaN(lat) && !isNaN(lng)) {
-              const marker = new google.maps.Marker({
-                position: { lat, lng },
-                map,
-                title: row["Name"] || "Unnamed",
-                icon: propertyIcons[iconKey] || "http://maps.google.com/mapfiles/ms/icons/pink-dot.png"
-              });
-
-              let infoContent = `<div class="info-window">`;
-
-headers.slice(0, 15).forEach(h => {
-  const value = row[h] || "N/A";
-  const isUrl = typeof value === "string" && value.startsWith("http");
-
-  if (isUrl) {
-    infoContent += `<strong>${h}:</strong> <a href="${value}" target="_blank" rel="noopener noreferrer">Link</a><br/>`;
-  } else {
-    infoContent += `<strong>${h}:</strong> ${value}<br/>`;
-  }
-});
-
-if (row["Image URL"]) {
-  infoContent += `<br/><img src="${row["Image URL"]}" alt="Property Image" />`;
-}
-
-infoContent += `</div>`;
-
-              const infoWindow = new google.maps.InfoWindow({ content: infoContent });
-              marker.addListener("click", () => infoWindow.open(map, marker));
-
-              marker.customData = {
-                lotNumber: lot,
-                status,
-                builder,
-                stage,
-                propertyType: rawType
-              };
-
-              allMarkers.push(marker);
-            }
-          }
-        });
-
-        populateFilters([...lotNumberSet], [...statusSet], [...builderSet], [...stageSet], [...propertyTypeSet]);
-        attachFilterListeners();
+        return new Intl.NumberFormat("en-US", {
+          style: "currency",
+          currency: "USD",
+          maximumFractionDigits: 0
+        }).format(number);
       }
 
-      function populateFilters(lotNumbers, statuses, builders, stages, propertyTypes) {
-        const lotNumberFilter = document.getElementById("lotNumberFilter");
-        lotNumbers.forEach(lot => {
-          const opt = document.createElement("option");
-          opt.value = lot;
-          opt.textContent = lot;
-          lotNumberFilter.appendChild(opt);
+      function escapeHtml(value) {
+        return String(value ?? "")
+          .replaceAll("&", "&amp;")
+          .replaceAll("<", "&lt;")
+          .replaceAll(">", "&gt;")
+          .replaceAll('"', "&quot;")
+          .replaceAll("'", "&#039;");
+      }
+
+      async function loadProperties() {
+        const response = await fetch("./data/properties.json", {
+          cache: "no-store"
         });
 
-        const statusFilter = document.getElementById("statusFilter");
-        statuses.forEach(status => {
-          const opt = document.createElement("option");
-          opt.value = normalizeKey(status);
-          opt.textContent = status;
-          statusFilter.appendChild(opt);
-        });
+        if (!response.ok) {
+          throw new Error(
+            `Property feed returned HTTP ${response.status}.`
+          );
+        }
 
-        const builderFilter = document.getElementById("builderFilter");
-        builders.forEach(builder => {
-          const opt = document.createElement("option");
-          opt.value = builder;
-          opt.textContent = builder;
-          builderFilter.appendChild(opt);
-        });
+        const payload = await response.json();
 
-        const stageFilter = document.getElementById("stageFilter");
-        stages.forEach(stage => {
-          const opt = document.createElement("option");
-          opt.value = stage;
-          opt.textContent = stage;
-          stageFilter.appendChild(opt);
-        });
+        if (!Array.isArray(payload.properties)) {
+          throw new Error(
+            "The property feed does not contain a properties array."
+          );
+        }
 
-        const propertyTypeFilter = document.getElementById("propertyTypeFilter");
-        propertyTypes.forEach(type => {
-          const opt = document.createElement("option");
-          opt.value = type;
-          opt.textContent = type;
-          propertyTypeFilter.appendChild(opt);
+        return payload;
+      }
+
+      async function initializeApplication() {
+        const list = document.getElementById("propertyList");
+
+        try {
+          const payload = await loadProperties();
+
+          allProperties = payload.properties;
+          populateFilters(allProperties);
+          attachFilterListeners();
+          applyFilters();
+          renderUpdatedTime(payload.generated_at);
+        } catch (error) {
+          console.error(error);
+
+          document.getElementById("resultsSummary").textContent =
+            "Property data unavailable";
+
+          list.innerHTML = `
+            <div class="error-state">
+              Property information could not be loaded.
+              Please try again later.
+            </div>
+          `;
+        }
+      }
+
+      function populateFilters(properties) {
+        populateSelect(
+          "lotNumberFilter",
+          properties.map(property => property.lot_number),
+          compareLotNumbers
+        );
+
+        populateSelect(
+          "propertyTypeFilter",
+          properties.map(property => property.property_type)
+        );
+
+        populateSelect(
+          "statusFilter",
+          properties.map(property => property.status)
+        );
+
+        populateSelect(
+          "stageFilter",
+          properties.map(property =>
+            property.stage || property.development_condition
+          )
+        );
+
+        populateSelect(
+          "builderFilter",
+          properties.map(property => property.builder)
+        );
+      }
+
+      function populateSelect(selectId, values, sortFunction) {
+        const select = document.getElementById(selectId);
+
+        const uniqueValues = [
+          ...new Set(
+            values
+              .map(value => String(value || "").trim())
+              .filter(Boolean)
+          )
+        ];
+
+        uniqueValues.sort(
+          sortFunction ||
+            ((a, b) => a.localeCompare(b, undefined, {
+              numeric: true
+            }))
+        );
+
+        uniqueValues.forEach(value => {
+          const option = document.createElement("option");
+          option.value = value;
+          option.textContent = value;
+          select.appendChild(option);
+        });
+      }
+
+      function compareLotNumbers(a, b) {
+        return String(a).localeCompare(String(b), undefined, {
+          numeric: true
         });
       }
 
       function attachFilterListeners() {
-        document.getElementById("lotNumberFilter").addEventListener("change", filterMarkers);
-        document.getElementById("statusFilter").addEventListener("change", filterMarkers);
-        document.getElementById("builderFilter").addEventListener("change", filterMarkers);
-        document.getElementById("stageFilter").addEventListener("change", filterMarkers);
-        document.getElementById("propertyTypeFilter").addEventListener("change", filterMarkers);
-      }
-
-      function filterMarkers() {
-        const lotNumberVal = document.getElementById("lotNumberFilter").value;
-        const statusVal = document.getElementById("statusFilter").value;
-        const builderVal = document.getElementById("builderFilter").value;
-        const stageVal = document.getElementById("stageFilter").value;
-        const propertyTypeVal = document.getElementById("propertyTypeFilter").value;
-
-        allMarkers.forEach(marker => {
-          const matchLot = !lotNumberVal || normalizeKey(marker.customData.lotNumber) === normalizeKey(lotNumberVal);
-          const matchStatus = !statusVal || normalizeKey(marker.customData.status) === normalizeKey(statusVal);
-          const matchBuilder = !builderVal || normalizeKey(marker.customData.builder) === normalizeKey(builderVal);
-          const matchStage = !stageVal || normalizeKey(marker.customData.stage) === normalizeKey(stageVal);
-          const matchType = !propertyTypeVal || normalizeKey(marker.customData.propertyType) === normalizeKey(propertyTypeVal);
-
-          marker.setVisible(matchLot && matchStatus && matchBuilder && matchStage && matchType);
+        [
+          "lotNumberFilter",
+          "propertyTypeFilter",
+          "statusFilter",
+          "stageFilter",
+          "builderFilter"
+        ].forEach(id => {
+          document
+            .getElementById(id)
+            .addEventListener("change", applyFilters);
         });
+
+        document
+          .getElementById("detailClose")
+          .addEventListener("click", closePropertyDetails);
       }
 
-      window.onload = initMap;
+      function applyFilters() {
+        const selected = {
+          lotNumber:
+            document.getElementById("lotNumberFilter").value,
+          propertyType:
+            document.getElementById("propertyTypeFilter").value,
+          status:
+            document.getElementById("statusFilter").value,
+          stage:
+            document.getElementById("stageFilter").value,
+          builder:
+            document.getElementById("builderFilter").value
+        };
+
+        visibleProperties = allProperties.filter(property => {
+          const stage =
+            property.stage || property.development_condition || "";
+
+          return (
+            matchesFilter(
+              property.lot_number,
+              selected.lotNumber
+            ) &&
+            matchesFilter(
+              property.property_type,
+              selected.propertyType
+            ) &&
+            matchesFilter(property.status, selected.status) &&
+            matchesFilter(stage, selected.stage) &&
+            matchesFilter(property.builder, selected.builder)
+          );
+        });
+
+        renderPropertyList(visibleProperties);
+
+        document.getElementById("resultsSummary").textContent =
+          `${visibleProperties.length} ${
+            visibleProperties.length === 1
+              ? "property"
+              : "properties"
+          }`;
+      }
+
+      function matchesFilter(propertyValue, selectedValue) {
+        return (
+          !selectedValue ||
+          normalizeKey(propertyValue) ===
+            normalizeKey(selectedValue)
+        );
+      }
+
+      function renderPropertyList(properties) {
+        const list = document.getElementById("propertyList");
+
+        if (properties.length === 0) {
+          list.innerHTML = `
+            <div class="empty-state">
+              No properties match the selected filters.
+            </div>
+          `;
+          return;
+        }
+
+        list.innerHTML = properties
+          .map(property => {
+            const title =
+              property.name ||
+              (property.lot_number
+                ? `Lot ${property.lot_number}`
+                : property.lot_id);
+
+            const stage =
+              property.stage ||
+              property.development_condition ||
+              "";
+
+            const price = formatPrice(property.price);
+
+            return `
+              <button
+                type="button"
+                class="property-card ${
+                  selectedLotId === property.lot_id
+                    ? "is-selected"
+                    : ""
+                }"
+                data-lot-id="${escapeHtml(property.lot_id)}"
+              >
+                <h2 class="property-card-title">
+                  ${escapeHtml(title)}
+                </h2>
+
+                <div class="property-card-meta">
+                  ${
+                    property.lot_number
+                      ? `<span>Lot ${escapeHtml(
+                          property.lot_number
+                        )}</span>`
+                      : ""
+                  }
+                  ${
+                    property.status
+                      ? `<span>${escapeHtml(property.status)}</span>`
+                      : ""
+                  }
+                  ${
+                    stage
+                      ? `<span>${escapeHtml(stage)}</span>`
+                      : ""
+                  }
+                  ${
+                    property.builder
+                      ? `<span>${escapeHtml(property.builder)}</span>`
+                      : ""
+                  }
+                  ${
+                    price
+                      ? `<span>${escapeHtml(price)}</span>`
+                      : ""
+                  }
+                </div>
+              </button>
+            `;
+          })
+          .join("");
+
+        list
+          .querySelectorAll("[data-lot-id]")
+          .forEach(button => {
+            button.addEventListener("click", () => {
+              openPropertyDetails(button.dataset.lotId);
+            });
+          });
+      }
+
+      function openPropertyDetails(lotId) {
+        const property = allProperties.find(
+          item => item.lot_id === lotId
+        );
+
+        if (!property) {
+          return;
+        }
+
+        selectedLotId = lotId;
+
+        const title =
+          property.name ||
+          (property.lot_number
+            ? `Lot ${property.lot_number}`
+            : property.lot_id);
+
+        document.getElementById("detailTitle").textContent =
+          title;
+
+        const fields = [
+          ["Lot Number", property.lot_number],
+          ["Phase", property.phase],
+          ["Property Type", property.property_type],
+          ["Status", property.status],
+          [
+            "Stage",
+            property.stage || property.development_condition
+          ],
+          ["Builder", property.builder],
+          ["Architect", property.architect],
+          ["Price", formatPrice(property.price)],
+          ["DMP Number", property.dmp_number],
+          ["Land id Label", property.land_id_label]
+        ].filter(([, value]) => value !== "" && value != null);
+
+        const detailsHtml = fields
+          .map(
+            ([label, value]) => `
+              <dt>${escapeHtml(label)}</dt>
+              <dd>${escapeHtml(value)}</dd>
+            `
+          )
+          .join("");
+
+        const imageHtml = property.primary_image
+          ? `
+            <img
+              class="property-image"
+              src="${escapeHtml(property.primary_image)}"
+              alt="${escapeHtml(title)}"
+            />
+          `
+          : "";
+
+        const descriptionHtml = property.description
+          ? `<p>${escapeHtml(property.description)}</p>`
+          : "";
+
+        const linkHtml = property.listing_url
+          ? `
+            <p>
+              <a
+                href="${escapeHtml(property.listing_url)}"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                View property page
+              </a>
+            </p>
+          `
+          : "";
+
+        document.getElementById("detailContent").innerHTML = `
+          ${descriptionHtml}
+          <dl class="detail-grid">${detailsHtml}</dl>
+          ${imageHtml}
+          ${linkHtml}
+        `;
+
+        document.getElementById("detailPanel").hidden = false;
+
+        renderPropertyList(visibleProperties);
+      }
+
+      function closePropertyDetails() {
+        selectedLotId = null;
+        document.getElementById("detailPanel").hidden = true;
+        renderPropertyList(visibleProperties);
+      }
+
+      function renderUpdatedTime(generatedAt) {
+        const element = document.getElementById("dataUpdated");
+
+        if (!generatedAt) {
+          element.textContent = "";
+          return;
+        }
+
+        const date = new Date(generatedAt);
+
+        if (Number.isNaN(date.getTime())) {
+          element.textContent = "";
+          return;
+        }
+
+        element.textContent =
+          `Data updated ${date.toLocaleString("en-US", {
+            dateStyle: "medium",
+            timeStyle: "short"
+          })}`;
+      }
+
+      document.addEventListener(
+        "DOMContentLoaded",
+        initializeApplication
+      );
     </script>
   </body>
 </html>
