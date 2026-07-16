@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-07-16T23:10:40.458Z",
+  "generated_at": "2026-07-16T23:26:13.833Z",
   "record_count": 1,
   "source": "PipelineCRM via Google Sheets",
   "dataset_version": 1,
@@ -20,7 +20,7 @@
       "neighborhood_zoning": "Edge",
       "architect": "LiveWell Home Design",
       "builder": "Chandler Trask Construction",
-      "build_date": "1970-01-01T00:00:02.014Z",
+      "build_date": "2014-12-31T00:00:00.000Z",
       "description": "7 St. Phillips Blvd.",
       "land_id_label": "1",
       "sort_order": 1
