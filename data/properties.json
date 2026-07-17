@@ -1,29 +1,7 @@
 {
-  "generated_at": "2026-07-17T00:02:45.440Z",
-  "record_count": 1,
+  "generated_at": "2026-07-17T00:03:41.543Z",
+  "record_count": 0,
   "source": "PipelineCRM via Google Sheets",
   "dataset_version": 1,
-  "properties": [
-    {
-      "lot_id": "EDGE-1",
-      "deal_id": "2561513",
-      "lot_number": "1",
-      "name": "7 St. Phillips Blvd.",
-      "dmp_number": "151",
-      "latitude": 32.427458,
-      "longitude": -80.775349,
-      "property_type": "Single Family",
-      "status": "Improved",
-      "stage": "Inactive",
-      "price": 0,
-      "phase": "Edge",
-      "neighborhood_zoning": "Edge",
-      "architect": "LiveWell Home Design",
-      "builder": "Chandler Trask Construction",
-      "build_date": 2014,
-      "description": "7 St. Phillips Blvd.",
-      "land_id_label": "1",
-      "sort_order": 1
-    }
-  ]
+  "properties": []
 }
