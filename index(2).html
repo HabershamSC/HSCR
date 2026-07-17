@@ -1,0 +1,938 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Habersham Active Mapping</title>
+
+    <style>
+      :root {
+        --panel-width: 300px;
+        --panel-background: rgba(255, 255, 255, 0.96);
+        --panel-border: rgba(0, 0, 0, 0.14);
+        --panel-shadow: 0 4px 16px rgba(0, 0, 0, 0.28);
+        --habersham-green: #315f46;
+        --habersham-green-dark: #244936;
+      }
+
+      html,
+      body,
+      #map {
+        width: 100%;
+        height: 100%;
+        margin: 0;
+        padding: 0;
+      }
+
+      body {
+        overflow: hidden;
+        font-family: Arial, Helvetica, sans-serif;
+      }
+
+      #map {
+        background: #d9d9d9;
+      }
+
+      #filters {
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        z-index: 5;
+        width: min(var(--panel-width), calc(100vw - 40px));
+        max-height: calc(100vh - 40px);
+        box-sizing: border-box;
+        overflow-y: auto;
+        padding: 14px;
+        border: 1px solid var(--panel-border);
+        border-radius: 6px;
+        background: var(--panel-background);
+        box-shadow: var(--panel-shadow);
+      }
+
+      #filters h1 {
+        margin: 0 0 12px;
+        font-size: 18px;
+        line-height: 1.25;
+        color: #222;
+      }
+
+      .filter-grid {
+        display: grid;
+        gap: 10px;
+      }
+
+      .filter-field {
+        display: grid;
+        gap: 4px;
+      }
+
+      .filter-field label {
+        font-size: 12px;
+        font-weight: 700;
+        color: #333;
+      }
+
+      .filter-field select {
+        width: 100%;
+        min-height: 36px;
+        box-sizing: border-box;
+        border: 1px solid #aaa;
+        border-radius: 4px;
+        padding: 6px 8px;
+        background: #fff;
+        color: #222;
+        font-size: 14px;
+      }
+
+      .filter-actions {
+        display: flex;
+        gap: 8px;
+        margin-top: 12px;
+      }
+
+      .filter-actions button {
+        flex: 1;
+        min-height: 36px;
+        border: 0;
+        border-radius: 4px;
+        padding: 8px 10px;
+        background: var(--habersham-green);
+        color: #fff;
+        font-size: 13px;
+        font-weight: 700;
+        cursor: pointer;
+      }
+
+      .filter-actions button:hover,
+      .filter-actions button:focus-visible {
+        background: var(--habersham-green-dark);
+      }
+
+      #mapStatus {
+        margin-top: 10px;
+        padding-top: 10px;
+        border-top: 1px solid #ddd;
+        font-size: 12px;
+        line-height: 1.4;
+        color: #555;
+      }
+
+      #mapStatus.error {
+        color: #9b1c1c;
+        font-weight: 700;
+      }
+
+      .info-window {
+        width: min(330px, 78vw);
+        font-family: Arial, Helvetica, sans-serif;
+        color: #222;
+      }
+
+      .info-window h2 {
+        margin: 0 0 4px;
+        font-size: 20px;
+        line-height: 1.2;
+      }
+
+      .info-window .property-name {
+        margin: 0 0 10px;
+        color: #555;
+        font-weight: 700;
+      }
+
+      .info-window .status-badge {
+        display: inline-block;
+        margin: 0 0 10px;
+        padding: 4px 8px;
+        border-radius: 999px;
+        background: #eee;
+        font-size: 12px;
+        font-weight: 700;
+      }
+
+      .info-window dl {
+        display: grid;
+        grid-template-columns: 128px minmax(0, 1fr);
+        gap: 5px 10px;
+        margin: 8px 0 0;
+      }
+
+      .info-window dt {
+        font-weight: 700;
+        color: #444;
+      }
+
+      .info-window dd {
+        min-width: 0;
+        margin: 0;
+        overflow-wrap: anywhere;
+      }
+
+      .info-window img {
+        display: block;
+        max-width: 100%;
+        margin-top: 12px;
+        border-radius: 4px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+      }
+
+      .info-window a.property-link {
+        display: inline-block;
+        margin-top: 12px;
+        padding: 9px 14px;
+        border-radius: 4px;
+        background: var(--habersham-green);
+        color: #fff;
+        text-decoration: none;
+        font-weight: 700;
+      }
+
+      .info-window a.property-link:hover,
+      .info-window a.property-link:focus-visible {
+        background: var(--habersham-green-dark);
+      }
+
+      @media (max-width: 700px) {
+        #filters {
+          top: 8px;
+          left: 8px;
+          width: calc(100vw - 16px);
+          max-height: 42vh;
+        }
+
+        .filter-grid {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .filter-field:first-child {
+          grid-column: 1 / -1;
+        }
+      }
+
+      @media (max-width: 440px) {
+        .filter-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .filter-field:first-child {
+          grid-column: auto;
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+    <aside id="filters" aria-label="Property filters">
+      <h1>Habersham Active Mapping</h1>
+
+      <div class="filter-grid">
+        <div class="filter-field">
+          <label for="lotNumberFilter">Lot Number</label>
+          <select id="lotNumberFilter">
+            <option value="">All</option>
+          </select>
+        </div>
+
+        <div class="filter-field">
+          <label for="propertyTypeFilter">Property Type</label>
+          <select id="propertyTypeFilter">
+            <option value="">All</option>
+          </select>
+        </div>
+
+        <div class="filter-field">
+          <label for="statusFilter">Status</label>
+          <select id="statusFilter">
+            <option value="">All</option>
+          </select>
+        </div>
+
+        <div class="filter-field">
+          <label for="stageFilter">Stage</label>
+          <select id="stageFilter">
+            <option value="">All</option>
+          </select>
+        </div>
+
+        <div class="filter-field">
+          <label for="builderFilter">Builder</label>
+          <select id="builderFilter">
+            <option value="">All</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="filter-actions">
+        <button id="clearFiltersButton" type="button">Clear Filters</button>
+      </div>
+
+      <div id="mapStatus" role="status" aria-live="polite">
+        Loading map data…
+      </div>
+    </aside>
+
+    <main id="map" aria-label="Habersham parcel map"></main>
+
+    <script>
+      "use strict";
+
+      const CONFIG = {
+        sheetId: "1ved7oTZAR1PNFKrAgOmTwAx0DdjcoPEPnvHZCP02msU",
+        sheetName: "CRM_DEALS_RAW",
+        googleApiKey: "AIzaSyBxUzPZYFuNou4HVQlVcrvkIUgHWbGuJd0",
+        geoJsonUrl: "./habersham-parcels.geojson",
+        mapCenter: {
+          lat: 32.425980,
+          lng: -80.777523
+        },
+        initialZoom: 16,
+        fitToParcelBounds: true
+      };
+
+      let map;
+      let infoWindow;
+      let crmRows = [];
+      let crmByDealId = new Map();
+      let parcelFeatures = [];
+
+      function normalizeKey(value) {
+        return String(value ?? "").trim().toLowerCase();
+      }
+
+      function normalizeDealId(value) {
+        return String(value ?? "")
+          .trim()
+          .replace(/\.0$/, "");
+      }
+
+      function escapeHtml(value) {
+        return String(value ?? "")
+          .replaceAll("&", "&amp;")
+          .replaceAll("<", "&lt;")
+          .replaceAll(">", "&gt;")
+          .replaceAll('"', "&quot;")
+          .replaceAll("'", "&#039;");
+      }
+
+      function escapeAttribute(value) {
+        return escapeHtml(value);
+      }
+
+      function setMapStatus(message, isError = false) {
+        const statusElement = document.getElementById("mapStatus");
+        statusElement.textContent = message;
+        statusElement.classList.toggle("error", isError);
+      }
+
+      function getFirstValue(row, fieldNames) {
+        for (const fieldName of fieldNames) {
+          const value = row?.[fieldName];
+          if (value !== undefined && value !== null && String(value).trim() !== "") {
+            return value;
+          }
+        }
+
+        return "";
+      }
+
+      async function initMap() {
+        try {
+          map = new google.maps.Map(document.getElementById("map"), {
+            zoom: CONFIG.initialZoom,
+            center: CONFIG.mapCenter,
+            mapTypeId: "satellite",
+            mapTypeControl: true,
+            streetViewControl: true,
+            fullscreenControl: true,
+            mapTypeControlOptions: {
+              style: google.maps.MapTypeControlStyle.HORIZONTAL_BAR,
+              position: google.maps.ControlPosition.TOP_RIGHT
+            }
+          });
+
+          infoWindow = new google.maps.InfoWindow();
+
+          installParcelInteractions();
+          attachFilterListeners();
+
+          await loadCRMData();
+          populateFiltersFromCRM();
+          await loadParcelPolygons();
+
+          const matchedCount = parcelFeatures.filter(
+            feature => feature.getProperty("crm_match_found") === true
+          ).length;
+
+          const visibleGeometryCount = parcelFeatures.length;
+
+          setMapStatus(
+            `${visibleGeometryCount.toLocaleString()} parcel polygons loaded; ` +
+            `${matchedCount.toLocaleString()} matched to CRM records.`
+          );
+        } catch (error) {
+          console.error("Map initialization failed:", error);
+          setMapStatus(`Map initialization failed: ${error.message}`, true);
+        }
+      }
+
+      async function loadCRMData() {
+        setMapStatus("Loading Pipeline CRM data from Google Sheets…");
+
+        const range = encodeURIComponent(CONFIG.sheetName);
+        const url =
+          `https://sheets.googleapis.com/v4/spreadsheets/` +
+          `${CONFIG.sheetId}/values/${range}?alt=json&key=${CONFIG.googleApiKey}`;
+
+        const response = await fetch(url, {
+          cache: "no-store"
+        });
+
+        if (!response.ok) {
+          const responseText = await response.text();
+          throw new Error(
+            `Google Sheets request failed (${response.status}). ${responseText}`
+          );
+        }
+
+        const json = await response.json();
+        const rows = json.values;
+
+        if (!Array.isArray(rows) || rows.length === 0) {
+          throw new Error(
+            `The "${CONFIG.sheetName}" worksheet returned no rows.`
+          );
+        }
+
+        const headers = rows[0].map(header => String(header).trim());
+
+        crmRows = rows.slice(1).map(row => {
+          const record = {};
+
+          headers.forEach((header, index) => {
+            record[header] = row[index] ?? "";
+          });
+
+          return record;
+        });
+
+        crmByDealId = new Map();
+
+        crmRows.forEach(row => {
+          const dealId = normalizeDealId(row["Deal ID"]);
+
+          if (dealId) {
+            crmByDealId.set(dealId, row);
+          }
+        });
+      }
+
+      async function loadParcelPolygons() {
+        setMapStatus("Loading parcel polygons…");
+
+        const response = await fetch(CONFIG.geoJsonUrl, {
+          cache: "no-store"
+        });
+
+        if (!response.ok) {
+          throw new Error(
+            `Unable to load ${CONFIG.geoJsonUrl} (${response.status}).`
+          );
+        }
+
+        const geoJson = await response.json();
+
+        if (
+          !geoJson ||
+          geoJson.type !== "FeatureCollection" ||
+          !Array.isArray(geoJson.features)
+        ) {
+          throw new Error("The parcel file is not a valid GeoJSON FeatureCollection.");
+        }
+
+        map.data.forEach(feature => {
+          map.data.remove(feature);
+        });
+
+        parcelFeatures = map.data.addGeoJson(geoJson, {
+          idPropertyName: "deal_id"
+        });
+
+        enrichParcelsFromCRM();
+        applyParcelStyles();
+
+        if (CONFIG.fitToParcelBounds) {
+          fitMapToParcels();
+        }
+      }
+
+      function enrichParcelsFromCRM() {
+        parcelFeatures.forEach(feature => {
+          const dealId = normalizeDealId(
+            feature.getProperty("deal_id") || feature.getId()
+          );
+
+          const crm = crmByDealId.get(dealId);
+
+          feature.setProperty("crm_match_found", Boolean(crm));
+
+          if (!crm) {
+            return;
+          }
+
+          const lotNumber = getFirstValue(crm, ["Lot Number"]);
+          const propertyType = getFirstValue(crm, ["Property Type"]);
+          const lotStatus = getFirstValue(crm, ["Lot Status", "Status"]);
+          const stage = getFirstValue(crm, ["Stage"]);
+          const builder = getFirstValue(crm, ["Builder"]);
+          const name = getFirstValue(crm, ["Name", "Property Name"]);
+          const price = getFirstValue(crm, ["Price", "List Price", "Asking Price"]);
+          const listingUrl = getFirstValue(crm, [
+            "Listing URL",
+            "Property URL",
+            "Website",
+            "URL"
+          ]);
+          const imageUrl = getFirstValue(crm, ["Image URL", "Image"]);
+          const address = getFirstValue(crm, [
+            "Address",
+            "Property Address",
+            "Street Address"
+          ]);
+
+          feature.setProperty(
+            "lot_number",
+            lotNumber || feature.getProperty("lot_number") || ""
+          );
+          feature.setProperty("property_type", propertyType);
+          feature.setProperty("lot_status", lotStatus);
+          feature.setProperty("stage", stage);
+          feature.setProperty("builder", builder);
+          feature.setProperty(
+            "name",
+            name || feature.getProperty("name") || ""
+          );
+          feature.setProperty("price", price);
+          feature.setProperty("listing_url", listingUrl);
+          feature.setProperty("image_url", imageUrl);
+          feature.setProperty("address", address);
+        });
+      }
+
+      function populateFiltersFromCRM() {
+        const lotNumbers = new Set();
+        const propertyTypes = new Set();
+        const statuses = new Set();
+        const stages = new Set();
+        const builders = new Set();
+
+        crmRows.forEach(row => {
+          const lotNumber = getFirstValue(row, ["Lot Number"]);
+          const propertyType = getFirstValue(row, ["Property Type"]);
+          const status = getFirstValue(row, ["Lot Status", "Status"]);
+          const stage = getFirstValue(row, ["Stage"]);
+          const builder = getFirstValue(row, ["Builder"]);
+
+          if (lotNumber) lotNumbers.add(String(lotNumber).trim());
+          if (propertyType) propertyTypes.add(String(propertyType).trim());
+          if (status) statuses.add(String(status).trim());
+          if (stage) stages.add(String(stage).trim());
+          if (builder) builders.add(String(builder).trim());
+        });
+
+        replaceSelectOptions(
+          "lotNumberFilter",
+          [...lotNumbers].sort(naturalSort)
+        );
+
+        replaceSelectOptions(
+          "propertyTypeFilter",
+          [...propertyTypes].sort(textSort)
+        );
+
+        replaceSelectOptions(
+          "statusFilter",
+          [...statuses].sort(textSort)
+        );
+
+        replaceSelectOptions(
+          "stageFilter",
+          [...stages].sort(textSort)
+        );
+
+        replaceSelectOptions(
+          "builderFilter",
+          [...builders].sort(textSort)
+        );
+      }
+
+      function replaceSelectOptions(selectId, values) {
+        const select = document.getElementById(selectId);
+        select.replaceChildren();
+
+        const allOption = document.createElement("option");
+        allOption.value = "";
+        allOption.textContent = "All";
+        select.appendChild(allOption);
+
+        values.forEach(value => {
+          const option = document.createElement("option");
+          option.value = value;
+          option.textContent = value;
+          select.appendChild(option);
+        });
+      }
+
+      function naturalSort(left, right) {
+        return String(left).localeCompare(String(right), undefined, {
+          numeric: true,
+          sensitivity: "base"
+        });
+      }
+
+      function textSort(left, right) {
+        return String(left).localeCompare(String(right), undefined, {
+          sensitivity: "base"
+        });
+      }
+
+      function getParcelStyle(feature) {
+        const status = normalizeKey(feature.getProperty("lot_status"));
+        const matchStatus = normalizeKey(
+          feature.getProperty("polygon_match_status")
+        );
+        const source = normalizeKey(feature.getProperty("polygon_source"));
+
+        let fillColor = "#607d8b";
+        let fillOpacity = 0.38;
+        let strokeColor = "#ffffff";
+        let strokeWeight = 1.35;
+
+        if (status.includes("available")) {
+          fillColor = "#4f7f52";
+          fillOpacity = 0.58;
+        } else if (
+          status.includes("pending") ||
+          status.includes("reserved") ||
+          status.includes("contract")
+        ) {
+          fillColor = "#c6922f";
+          fillOpacity = 0.58;
+        } else if (
+          status.includes("sold") ||
+          status.includes("closed")
+        ) {
+          fillColor = "#777777";
+          fillOpacity = 0.32;
+        } else if (
+          status.includes("hold") ||
+          status.includes("off market")
+        ) {
+          fillColor = "#8a6a91";
+          fillOpacity = 0.46;
+        } else if (
+          status.includes("future") ||
+          status.includes("unreleased")
+        ) {
+          fillColor = "#4f6f8f";
+          fillOpacity = 0.42;
+        }
+
+        if (matchStatus === "review") {
+          strokeColor = "#d32f2f";
+          strokeWeight = 2.5;
+        } else if (source === "png") {
+          strokeColor = "#f2df82";
+          strokeWeight = 1.7;
+        }
+
+        return {
+          clickable: true,
+          visible: true,
+          fillColor,
+          fillOpacity,
+          strokeColor,
+          strokeOpacity: 0.95,
+          strokeWeight,
+          zIndex: 2
+        };
+      }
+
+      function applyParcelStyles() {
+        map.data.setStyle(feature => getParcelStyle(feature));
+      }
+
+      function applyFilters() {
+        const lotNumber = normalizeKey(
+          document.getElementById("lotNumberFilter").value
+        );
+        const propertyType = normalizeKey(
+          document.getElementById("propertyTypeFilter").value
+        );
+        const status = normalizeKey(
+          document.getElementById("statusFilter").value
+        );
+        const stage = normalizeKey(
+          document.getElementById("stageFilter").value
+        );
+        const builder = normalizeKey(
+          document.getElementById("builderFilter").value
+        );
+
+        let visibleCount = 0;
+
+        map.data.setStyle(feature => {
+          const matches =
+            (!lotNumber ||
+              normalizeKey(feature.getProperty("lot_number")) === lotNumber) &&
+            (!propertyType ||
+              normalizeKey(feature.getProperty("property_type")) === propertyType) &&
+            (!status ||
+              normalizeKey(feature.getProperty("lot_status")) === status) &&
+            (!stage ||
+              normalizeKey(feature.getProperty("stage")) === stage) &&
+            (!builder ||
+              normalizeKey(feature.getProperty("builder")) === builder);
+
+          if (matches) {
+            visibleCount += 1;
+          }
+
+          return {
+            ...getParcelStyle(feature),
+            visible: matches
+          };
+        });
+
+        infoWindow.close();
+
+        setMapStatus(
+          `${visibleCount.toLocaleString()} of ` +
+          `${parcelFeatures.length.toLocaleString()} parcel polygons visible.`
+        );
+      }
+
+      function clearFilters() {
+        [
+          "lotNumberFilter",
+          "propertyTypeFilter",
+          "statusFilter",
+          "stageFilter",
+          "builderFilter"
+        ].forEach(selectId => {
+          document.getElementById(selectId).value = "";
+        });
+
+        applyFilters();
+      }
+
+      function attachFilterListeners() {
+        [
+          "lotNumberFilter",
+          "propertyTypeFilter",
+          "statusFilter",
+          "stageFilter",
+          "builderFilter"
+        ].forEach(selectId => {
+          document
+            .getElementById(selectId)
+            .addEventListener("change", applyFilters);
+        });
+
+        document
+          .getElementById("clearFiltersButton")
+          .addEventListener("click", clearFilters);
+      }
+
+      function installParcelInteractions() {
+        map.data.addListener("click", event => {
+          const feature = event.feature;
+          const lotNumber =
+            feature.getProperty("lot_number") || "Not assigned";
+          const name = feature.getProperty("name") || "";
+          const address = feature.getProperty("address") || "";
+          const status =
+            feature.getProperty("lot_status") || "Not specified";
+          const propertyType =
+            feature.getProperty("property_type") || "Not specified";
+          const stage =
+            feature.getProperty("stage") || "Not specified";
+          const builder =
+            feature.getProperty("builder") || "Not specified";
+          const price = feature.getProperty("price") || "";
+          const listingUrl =
+            feature.getProperty("listing_url") || "";
+          const imageUrl =
+            feature.getProperty("image_url") || "";
+          const source =
+            feature.getProperty("polygon_source") || "Not specified";
+          const confidence =
+            feature.getProperty("polygon_confidence");
+          const countyPin =
+            feature.getProperty("county_parcel_pin") || "";
+          const matchStatus =
+            feature.getProperty("polygon_match_status") || "";
+          const dealId =
+            feature.getProperty("deal_id") || feature.getId() || "";
+
+          const propertyTitle = name || address;
+
+          const content = `
+            <div class="info-window">
+              <h2>Lot ${escapeHtml(lotNumber)}</h2>
+
+              ${
+                propertyTitle
+                  ? `<p class="property-name">${escapeHtml(propertyTitle)}</p>`
+                  : ""
+              }
+
+              <span class="status-badge">${escapeHtml(status)}</span>
+
+              <dl>
+                <dt>Property Type</dt>
+                <dd>${escapeHtml(propertyType)}</dd>
+
+                <dt>Stage</dt>
+                <dd>${escapeHtml(stage)}</dd>
+
+                <dt>Builder</dt>
+                <dd>${escapeHtml(builder)}</dd>
+
+                ${
+                  price
+                    ? `
+                      <dt>Price</dt>
+                      <dd>${escapeHtml(price)}</dd>
+                    `
+                    : ""
+                }
+
+                <dt>Polygon Source</dt>
+                <dd>${escapeHtml(source)}</dd>
+
+                ${
+                  confidence !== null &&
+                  confidence !== undefined &&
+                  confidence !== ""
+                    ? `
+                      <dt>Confidence</dt>
+                      <dd>${escapeHtml(confidence)}%</dd>
+                    `
+                    : ""
+                }
+
+                ${
+                  matchStatus
+                    ? `
+                      <dt>Match Status</dt>
+                      <dd>${escapeHtml(matchStatus)}</dd>
+                    `
+                    : ""
+                }
+
+                ${
+                  countyPin
+                    ? `
+                      <dt>County PIN</dt>
+                      <dd>${escapeHtml(countyPin)}</dd>
+                    `
+                    : ""
+                }
+
+                ${
+                  dealId
+                    ? `
+                      <dt>Deal ID</dt>
+                      <dd>${escapeHtml(dealId)}</dd>
+                    `
+                    : ""
+                }
+              </dl>
+
+              ${
+                listingUrl
+                  ? `
+                    <a
+                      class="property-link"
+                      href="${escapeAttribute(listingUrl)}"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      View Property
+                    </a>
+                  `
+                  : ""
+              }
+
+              ${
+                imageUrl
+                  ? `
+                    <img
+                      src="${escapeAttribute(imageUrl)}"
+                      alt="Property image for Lot ${escapeAttribute(lotNumber)}"
+                    />
+                  `
+                  : ""
+              }
+            </div>
+          `;
+
+          infoWindow.setContent(content);
+          infoWindow.setPosition(event.latLng);
+          infoWindow.open({
+            map
+          });
+        });
+
+        map.data.addListener("mouseover", event => {
+          map.data.overrideStyle(event.feature, {
+            fillOpacity: 0.78,
+            strokeWeight: 3,
+            zIndex: 10
+          });
+        });
+
+        map.data.addListener("mouseout", event => {
+          map.data.revertStyle(event.feature);
+        });
+      }
+
+      function fitMapToParcels() {
+        const bounds = new google.maps.LatLngBounds();
+        let hasCoordinates = false;
+
+        map.data.forEach(feature => {
+          const geometry = feature.getGeometry();
+
+          if (!geometry) {
+            return;
+          }
+
+          geometry.forEachLatLng(latLng => {
+            bounds.extend(latLng);
+            hasCoordinates = true;
+          });
+        });
+
+        if (hasCoordinates) {
+          map.fitBounds(bounds, 30);
+
+          google.maps.event.addListenerOnce(map, "idle", () => {
+            if (map.getZoom() > 18) {
+              map.setZoom(18);
+            }
+          });
+        }
+      }
+
+      window.initMap = initMap;
+    </script>
+
+    <script
+      async
+      defer
+      src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBxUzPZYFuNou4HVQlVcrvkIUgHWbGuJd0&callback=initMap"
+    ></script>
+  </body>
+</html>
