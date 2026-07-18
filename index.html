@@ -2,7 +2,6 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <!-- Added maximum-scale=1.0 and user-scalable=no to prevent accidental zooming of the webpage on mobile -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Habersham Property Map</title>
   
@@ -12,7 +11,6 @@
     body { margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
     #map { width: 100vw; height: 100vh; }
     
-    /* Popup Styling */
     .popup-content { max-height: 250px; overflow-y: auto; padding-right: 10px; }
     .popup-content h3 { margin: 0 0 8px 0; font-size: 16px; color: #333; }
     .popup-content a { display: inline-block; margin-top: 8px; color: #007bff; text-decoration: none; }
@@ -20,7 +18,6 @@
     .prop-row { border-bottom: 1px solid #eee; padding: 4px 0; font-size: 13px; color: #555; }
     .prop-row strong { color: #333; text-transform: capitalize; }
 
-    /* Mobile Toggle Button (Hidden on Desktop) */
     #mobile-toggle {
         display: none;
         position: absolute;
@@ -38,7 +35,6 @@
         font-size: 14px;
     }
 
-    /* Condensed Upper-Left Control Panel */
     #control-panel {
         position: absolute;
         top: 15px;
@@ -55,52 +51,39 @@
     
     #control-panel h4 { margin: 0 0 8px 0; font-size: 14px; border-bottom: 1px solid #ccc; padding-bottom: 4px; }
     
-    /* Filter Inputs */
     .filter-group { margin-bottom: 8px; }
     .filter-group label { display: block; font-size: 12px; font-weight: bold; margin-bottom: 2px; color: #444; }
     .filter-group input, .filter-group select { 
         width: 100%; padding: 4px; border: 1px solid #ccc; border-radius: 4px; font-size: 12px; box-sizing: border-box;
     }
 
-    /* Map Legend Key within Panel */
     .legend-item { display: flex; align-items: center; font-size: 12px; margin-bottom: 4px; color: #333; }
     .legend-color { width: 14px; height: 14px; margin-right: 8px; border: 1px solid #666; opacity: 0.7; }
     
-    /* Helper button */
     #apply-filters { 
         width: 100%; padding: 8px; margin-top: 5px; margin-bottom: 15px; 
         background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 14px; font-weight: bold;
     }
     #apply-filters:hover { background: #0056b3; }
 
-    /* MOBILE RESPONSIVE CSS */
     @media (max-width: 768px) {
-        #mobile-toggle { 
-            display: block; /* Show toggle button on phones */
-        }
+        #mobile-toggle { display: block; }
         #control-panel {
-            display: none; /* Hide panel by default on phones */
+            display: none;
             top: 60px;
             left: 10px;
-            width: calc(100vw - 44px); /* Full width minus padding */
+            width: calc(100vw - 44px);
             max-height: 75vh;
         }
-        #control-panel.active {
-            display: block; /* Class to reveal panel when toggled */
-        }
-        /* Make map zoom controls sit lower on mobile so they don't block the toggle */
-        .leaflet-control-zoom {
-            margin-top: 55px !important;
-        }
+        #control-panel.active { display: block; }
+        .leaflet-control-zoom { margin-top: 55px !important; }
     }
   </style>
 </head>
 <body>
 
-  <!-- Mobile Menu Button -->
   <button id="mobile-toggle">⚙️ Filters & Legend</button>
 
-  <!-- Condensed Control Panel (Filters + Legend) -->
   <div id="control-panel">
       <h4>Filter Properties</h4>
       
@@ -214,7 +197,10 @@
             popupHtml += `<h3>${props.name || props.land_id_label || 'Property Details'}</h3>`;
             
             for (const [key, value] of Object.entries(props)) {
-                if (value !== null && value !== "" && value !== undefined && key !== 'name' && key !== 'land_id_label' && key !== 'listing_url') { 
+                // Keep the raw lat/long data out of the user popup interface
+                if (value !== null && value !== "" && value !== undefined && 
+                    key !== 'name' && key !== 'land_id_label' && key !== 'listing_url' && key !== 'lat_long') { 
+                    
                     let displayValue = (key === 'price' && !isNaN(value)) ? `$${Number(value).toLocaleString()}` : value;
                     let cleanKey = key.replace(/_/g, ' '); 
                     popupHtml += `<div class="prop-row"><strong>${cleanKey}:</strong> ${displayValue}</div>`;
@@ -249,14 +235,12 @@
       })
       .catch(error => console.error('Error loading map data:', error));
 
-    // Listeners for UI interaction
     document.getElementById('mobile-toggle').addEventListener('click', function() {
         document.getElementById('control-panel').classList.toggle('active');
     });
 
     document.getElementById('apply-filters').addEventListener('click', function() {
         renderMap();
-        // Auto-close menu on mobile after filtering
         if (window.innerWidth <= 768) {
             document.getElementById('control-panel').classList.remove('active');
         }
