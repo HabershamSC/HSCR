@@ -537,7 +537,7 @@
       },
       "properties": {
         "lot_id": "LOT-6",
-        "deal_id": "Mon Mar 13 8913 00:00:00 GMT-0400 (Eastern Daylight Time)",
+        "deal_id": "2561519",
         "lot_number": "6",
         "name": "16 St. Phillips Blvd.",
         "dmp_number": "284",
@@ -3010,7 +3010,7 @@
       },
       "properties": {
         "lot_id": "LOT-54",
-        "deal_id": "Thu Dec 04 13417 00:00:00 GMT-0500 (Eastern Standard Time)",
+        "deal_id": "4206837",
         "lot_number": "54",
         "name": "9 Grace Park",
         "dmp_number": "198",
@@ -4260,7 +4260,7 @@
       },
       "properties": {
         "lot_id": "LOT-78",
-        "deal_id": "Mon May 22 8913 00:00:00 GMT-0400 (Eastern Daylight Time)",
+        "deal_id": "2561589",
         "lot_number": "78",
         "name": "131 South Park",
         "dmp_number": "247",
@@ -4924,61 +4924,6 @@
         "coordinates": [
           [
             [
-              -80.77668965896163,
-              32.423312160767665
-            ],
-            [
-              -80.77690544296787,
-              32.42351212114307
-            ],
-            [
-              -80.77703434575199,
-              32.42363157077462
-            ],
-            [
-              -80.77680747731746,
-              32.423807054700845
-            ],
-            [
-              -80.77676188064807,
-              32.423744513064044
-            ],
-            [
-              -80.77672541335282,
-              32.42369449345204
-            ],
-            [
-              -80.77664792426974,
-              32.42334455915022
-            ],
-            [
-              -80.77668965896163,
-              32.423312160767665
-            ]
-          ]
-        ]
-      },
-      "properties": {
-        "lot_id": "LOT-90",
-        "deal_id": "Sat Jun 03 8913 00:00:00 GMT-0400 (Eastern Daylight Time)",
-        "lot_number": "90",
-        "name": "103 South Park",
-        "dmp_number": "301",
-        "property_type": "Single Family",
-        "status": "Improved",
-        "price": 910000,
-        "architect": "Moser Design Group",
-        "builder": "Brant Construction",
-        "land_id_label": "Lot 90"
-      }
-    },
-    {
-      "type": "Feature",
-      "geometry": {
-        "type": "Polygon",
-        "coordinates": [
-          [
-            [
               -80.7726752899327,
               32.42196067155453
             ],
@@ -5223,70 +5168,6 @@
         "architect": "Allison Ramsey Architects",
         "builder": "Seaway Development",
         "land_id_label": "Lot 95"
-      }
-    },
-    {
-      "type": "Feature",
-      "geometry": {
-        "type": "Polygon",
-        "coordinates": [
-          [
-            [
-              -80.77624656999016,
-              32.42358076860124
-            ],
-            [
-              -80.77624578506841,
-              32.42358088304236
-            ],
-            [
-              -80.77623855487482,
-              32.42358193720005
-            ],
-            [
-              -80.77619924914326,
-              32.42338800470539
-            ],
-            [
-              -80.77634845131817,
-              32.423341386153005
-            ],
-            [
-              -80.77634912668975,
-              32.42334117513114
-            ],
-            [
-              -80.77643361784985,
-              32.42331477557916
-            ],
-            [
-              -80.77656341963065,
-              32.423320651395194
-            ],
-            [
-              -80.77660930769925,
-              32.42352788110381
-            ],
-            [
-              -80.77624656999016,
-              32.42358076860124
-            ]
-          ]
-        ]
-      },
-      "properties": {
-        "lot_id": "LOT-96",
-        "deal_id": "Fri Jun 09 8913 00:00:00 GMT-0400 (Eastern Daylight Time)",
-        "lot_number": "96",
-        "name": "120 Collin Campbell",
-        "dmp_number": "304",
-        "property_type": "Single Family",
-        "status": "Improved",
-        "stage": "Inactive",
-        "price": 0,
-        "architect": "LiveWell Home Design",
-        "builder": "Chandler Trask Construction",
-        "land_id_label": "Lot 96"
       }
     },
     {
@@ -12608,7 +12489,7 @@
       },
       "properties": {
         "lot_id": "LOT-209",
-        "deal_id": "Tue Sep 26 8913 00:00:00 GMT-0400 (Eastern Daylight Time)",
+        "deal_id": "2561716",
         "lot_number": "209",
         "name": "23 River Place",
         "dmp_number": "413",
@@ -16308,7 +16189,7 @@
       },
       "properties": {
         "lot_id": "LOT-268",
-        "deal_id": "Sat Nov 25 8913 00:00:00 GMT-0500 (Eastern Standard Time)",
+        "deal_id": "2561776",
         "lot_number": "268",
         "name": "55 North Eastover",
         "dmp_number": "466",
@@ -17799,7 +17680,7 @@
       },
       "properties": {
         "lot_id": "LOT-291",
-        "deal_id": "Mon Dec 18 8913 00:00:00 GMT-0500 (Eastern Standard Time)",
+        "deal_id": "2561799",
         "lot_number": "291",
         "name": "29 South Eastover",
         "dmp_number": "506",
@@ -20033,7 +19914,7 @@
       },
       "properties": {
         "lot_id": "LOT-323",
-        "deal_id": "Fri Jan 19 8914 00:00:00 GMT-0500 (Eastern Standard Time)",
+        "deal_id": "2561831",
         "lot_number": "323",
         "name": "1 South Loudon",
         "dmp_number": "635",
@@ -22967,7 +22848,7 @@
       },
       "properties": {
         "lot_id": "LOT-379",
-        "deal_id": "Fri Mar 16 8914 00:00:00 GMT-0400 (Eastern Daylight Time)",
+        "deal_id": "2561887",
         "lot_number": "379",
         "name": "20 Tuscarora Trail",
         "dmp_number": "589",
@@ -23145,7 +23026,7 @@
       },
       "properties": {
         "lot_id": "LOT-383",
-        "deal_id": "Tue Mar 20 8914 00:00:00 GMT-0400 (Eastern Daylight Time)",
+        "deal_id": "2561891",
         "lot_number": "383",
         "name": "37 James Habersham",
         "dmp_number": "644",
@@ -26429,7 +26310,7 @@
       },
       "properties": {
         "lot_id": "LOT-448",
-        "deal_id": "Fri May 25 8914 00:00:00 GMT-0400 (Eastern Daylight Time)",
+        "deal_id": "2561957",
         "lot_number": "448",
         "name": "17 Treadlands",
         "dmp_number": "692",
@@ -28341,7 +28222,7 @@
       },
       "properties": {
         "lot_id": "LOT-488",
-        "deal_id": "Tue Jul 03 8914 00:00:00 GMT-0400 (Eastern Daylight Time)",
+        "deal_id": "2561996",
         "lot_number": "488",
         "name": "9 East Manor",
         "dmp_number": "731",
@@ -30375,7 +30256,7 @@
       },
       "properties": {
         "lot_id": "LOT-524",
-        "deal_id": "Tue Aug 07 8914 00:00:00 GMT-0400 (Eastern Daylight Time)",
+        "deal_id": "2562031",
         "lot_number": "524",
         "name": "16 North Crescent",
         "dmp_number": "766",
@@ -30579,7 +30460,7 @@
       },
       "properties": {
         "lot_id": "LOT-528",
-        "deal_id": "Sat Aug 11 8914 00:00:00 GMT-0400 (Eastern Daylight Time)",
+        "deal_id": "2562035",
         "lot_number": "528",
         "name": "8 North Crescent",
         "dmp_number": "770",
@@ -30639,7 +30520,7 @@
       },
       "properties": {
         "lot_id": "LOT-529",
-        "deal_id": "Sun Aug 12 8914 00:00:00 GMT-0400 (Eastern Daylight Time)",
+        "deal_id": "2562036",
         "lot_number": "529",
         "name": "6 North Crescent",
         "dmp_number": "771",
@@ -30899,7 +30780,7 @@
       },
       "properties": {
         "lot_id": "LOT-533",
-        "deal_id": "Thu Aug 16 8914 00:00:00 GMT-0400 (Eastern Daylight Time)",
+        "deal_id": "2562040",
         "lot_number": "533",
         "name": "3 Brook Side",
         "dmp_number": "775",
@@ -31570,7 +31451,7 @@
       },
       "properties": {
         "lot_id": "LOT-545",
-        "deal_id": "Tue Aug 28 8914 00:00:00 GMT-0400 (Eastern Daylight Time)",
+        "deal_id": "2562052",
         "lot_number": "545",
         "name": "20 Treadlands",
         "dmp_number": "787",
@@ -32177,7 +32058,7 @@
       },
       "properties": {
         "lot_id": "LOT-558",
-        "deal_id": "Tue Sep 11 8914 00:00:00 GMT-0400 (Eastern Daylight Time)",
+        "deal_id": "2562066",
         "lot_number": "558",
         "name": "17 Habersham Park",
         "dmp_number": "800",
@@ -32347,7 +32228,7 @@
       },
       "properties": {
         "lot_id": "LOT-562",
-        "deal_id": "Sun Sep 16 8914 00:00:00 GMT-0400 (Eastern Daylight Time)",
+        "deal_id": "2562071",
         "lot_number": "562",
         "name": "2 Park Bend",
         "dmp_number": "804",
@@ -34551,7 +34432,7 @@
       },
       "properties": {
         "lot_id": "LOT-604-3A",
-        "deal_id": "Tue Jun 15 9813 00:00:00 GMT-0400 (Eastern Daylight Time)",
+        "deal_id": "2890331",
         "lot_number": "604-3A",
         "name": "2 Abbey Row 3A",
         "dmp_number": "846",
@@ -38756,7 +38637,7 @@
       },
       "properties": {
         "lot_id": "LOT-692",
-        "deal_id": "Mon Jan 21 8915 00:00:00 GMT-0500 (Eastern Standard Time)",
+        "deal_id": "2562198",
         "lot_number": "692",
         "name": "7 Tomlow Trace",
         "dmp_number": "961",
@@ -39440,7 +39321,7 @@
       },
       "properties": {
         "lot_id": "LOT-701",
-        "deal_id": "Wed Jan 30 8915 00:00:00 GMT-0500 (Eastern Standard Time)",
+        "deal_id": "2562207",
         "lot_number": "701",
         "name": "31 Old Bethel",
         "dmp_number": "970",
@@ -40288,7 +40169,7 @@
       },
       "properties": {
         "lot_id": "LOT-713",
-        "deal_id": "Mon Feb 11 8915 00:00:00 GMT-0500 (Eastern Standard Time)",
+        "deal_id": "2562219",
         "lot_number": "713",
         "name": "7 Old Bethel",
         "dmp_number": "982",
@@ -42333,7 +42214,7 @@
       },
       "properties": {
         "lot_id": "LOT-1004",
-        "deal_id": "Wed Jan 17 99218 00:00:00 GMT-0500 (Eastern Standard Time)",
+        "deal_id": "35544688",
         "lot_number": "1004",
         "name": "100 North Market",
         "dmp_number": "1021",
@@ -42771,8 +42652,8 @@
       "geometry": {
         "type": "Point",
         "coordinates": [
-          -80.7773351,
-          32.4282252
+          0,
+          0
         ]
       },
       "properties": {
@@ -42793,8 +42674,8 @@
       "geometry": {
         "type": "Point",
         "coordinates": [
-          -80.7773351,
-          32.4282252
+          0,
+          0
         ]
       },
       "properties": {
@@ -44577,7 +44458,7 @@
       },
       "properties": {
         "lot_id": "LOT-1055",
-        "deal_id": "Sat May 17 151079 00:00:00 GMT-0400 (Eastern Daylight Time)",
+        "deal_id": "54486649",
         "lot_number": "1055",
         "name": "14 Zeb Run",
         "dmp_number": "1090",
@@ -45885,8 +45766,8 @@
       "geometry": {
         "type": "Point",
         "coordinates": [
-          -80.7791108,
-          32.4295369
+          0,
+          0
         ]
       },
       "properties": {
