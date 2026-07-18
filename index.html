@@ -188,10 +188,7 @@
               if (fName && (!p.name || !p.name.toLowerCase().includes(fName))) return false;
               if (fLot && (!p.lot_number || !p.lot_number.toString().toLowerCase().includes(fLot))) return false;
               if (fType !== 'All' && p.property_type !== fType) return false;
-              
-              const featStatus = p.lot_status || p.status || p.Lot_Status;
-              if (fStatus !== 'All' && featStatus !== fStatus) return false;
-              
+              if (fStatus !== 'All' && p.status !== fStatus) return false;
               if (fStage !== 'All' && p.stage !== fStage) return false;
               if (fArch !== 'All' && p.architect !== fArch) return false;
               if (fBuild !== 'All' && p.builder !== fBuild) return false;
@@ -243,7 +240,7 @@
         rawGeojsonData = geojsonData;
         
         populateDropdown('fType', 'property_type');
-        populateDropdown('fStatus', 'lot_status'); 
+        populateDropdown('fStatus', 'status'); 
         populateDropdown('fStage', 'stage');
         populateDropdown('fArch', 'architect');
         populateDropdown('fBuild', 'builder');
