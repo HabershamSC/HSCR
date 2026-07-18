@@ -1,1 +1,1 @@
-{"address": "", "lotNumber": "", "propertyType": "", "stage": "", "amount": "", "architect": "", "builder": "", "imageUrl": "", "id": "", "centroidLatitude": "", "centroidLongitude": "", "dealId": "", "lastUpdated": ""}
+{"type": "Feature", "geometry": {"type": "Point", "coordinates": [, ]}, "properties": {"address": "", "lotNumber": "", "propertyType": "", "stage": "", "amount": "", "architect": "", "builder": "", "imageUrl": "", "id": "", "dealId": "", "lastUpdated": ""}}
