@@ -1,117 +1,28 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Habersham Property Map</title>
-  
-  <!-- Leaflet CSS for the map styling -->
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-  
-  <style>
-    /* Make the map fill the entire browser window */
-    body { margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-    #map { width: 100vw; height: 100vh; }
-    
-    /* Clean up the popup styling */
-    .popup-content h3 { margin: 0 0 8px 0; font-size: 18px; color: #333; }
-    .popup-content p { margin: 4px 0; font-size: 14px; color: #555; }
-    .popup-content .price { font-weight: bold; color: #28a745; }
-    .popup-content a { display: inline-block; margin-top: 8px; color: #007bff; text-decoration: none; }
-    .popup-content a:hover { text-decoration: underline; }
-  </style>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Habersham active property mapping">
+  <title>Habersham Active Mapping</title>
+  <link rel="stylesheet" href="./styles.css">
 </head>
 <body>
+  <aside id="filters" aria-label="Property filters">
+    <h1>Habersham Active Mapping</h1>
+    <div class="filter-grid">
+      <label>Lot Number<select id="lotNumberFilter"><option value="">All</option></select></label>
+      <label>Property Type<select id="propertyTypeFilter"><option value="">All</option></select></label>
+      <label>Status<select id="statusFilter"><option value="">All</option></select></label>
+      <label>Stage<select id="stageFilter"><option value="">All</option></select></label>
+      <label>Builder<select id="builderFilter"><option value="">All</option></select></label>
+    </div>
+    <button id="clearFiltersButton" type="button">Clear Filters</button>
+    <div id="mapStatus" role="status" aria-live="polite">Loading map data…</div>
+  </aside>
+  <main id="map" aria-label="Habersham parcel map"></main>
 
-  <!-- The container where the map will be drawn -->
-  <div id="map"></div>
-
-  <!-- Leaflet JavaScript library -->
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
-  <script>
-    // 1. Initialize the map
-    // Centered roughly on Beaufort/Habersham, SC. Zoom level 16.
-    const map = L.map('map').setView([32.4274, -80.7753], 16);
-
-    // 2. Add the base map tiles (the street view underneath)
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      maxZoom: 19,
-      attribution: '© OpenStreetMap contributors'
-    }).addTo(map);
-
-    // 3. Fetch our newly generated GeoJSON file directly from the repo
-    fetch('habersham-parcels.geojson')
-      .then(response => {
-        if (!response.ok) throw new Error('GeoJSON file not found. Has the publisher script run yet?');
-        return response.json();
-      })
-      .then(geojsonData => {
-        
-        // 4. Draw the data on the map
-        L.geoJSON(geojsonData, {
-          
-          // Style the polygons based on the 'status' property from your PipelineCRM
-          style: function (feature) {
-            let fillColor = '#3388ff'; // Default Blue
-            
-            switch (feature.properties.status) {
-              case 'Available': 
-                fillColor = '#28a745'; // Green
-                break;
-              case 'Under Contract': 
-              case 'Reserved':
-                fillColor = '#ffc107'; // Yellow
-                break;
-              case 'Sold': 
-                fillColor = '#dc3545'; // Red
-                break;
-              case 'Future Release':
-                fillColor = '#6c757d'; // Gray
-                break;
-            }
-
-            return {
-              color: '#000000',     // Black outline
-              weight: 1,            // Outline thickness
-              fillColor: fillColor, // Status color
-              fillOpacity: 0.6      // 60% transparent
-            };
-          },
-
-          // 5. Build the popup window for when a user clicks a parcel
-          onEachFeature: function (feature, layer) {
-            const props = feature.properties;
-            
-            // Build HTML for the popup
-            let popupHtml = `<div class="popup-content">`;
-            popupHtml += `<h3>${props.name || props.land_id_label || 'Property Details'}</h3>`;
-            popupHtml += `<p><strong>Status:</strong> ${props.status || 'Unknown'}</p>`;
-            
-            if (props.price) {
-              popupHtml += `<p class="price">Price: $${props.price.toLocaleString()}</p>`;
-            }
-            if (props.property_type) {
-              popupHtml += `<p><strong>Type:</strong> ${props.property_type}</p>`;
-            }
-            if (props.builder) {
-              popupHtml += `<p><strong>Builder:</strong> ${props.builder}</p>`;
-            }
-            if (props.listing_url) {
-              popupHtml += `<a href="${props.listing_url}" target="_blank">View Full Listing →</a>`;
-            }
-            
-            popupHtml += `</div>`;
-            
-            // Bind the popup to the shape
-            layer.bindPopup(popupHtml);
-          }
-
-        }).addTo(map);
-      })
-      .catch(error => {
-        console.error('Error loading map data:', error);
-      });
-  </script>
+  <script src="./app.js"></script>
+  <script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBxUzPZYFuNou4HVQlVcrvkIUgHWbGuJd0&callback=initMap&v=weekly"></script>
 </body>
 </html>
