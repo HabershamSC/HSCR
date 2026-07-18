@@ -294,6 +294,7 @@
       let infoWindow;
       let crmRows = [];
       let crmByDealId = new Map();
+      let crmByLotNumber = new Map(); // Added fallback lookup
       let parcelFeatures = [];
 
       function normalizeKey(value) {
@@ -332,7 +333,6 @@
             return value;
           }
         }
-
         return "";
       }
 
@@ -408,21 +408,24 @@
 
         crmRows = rows.slice(1).map(row => {
           const record = {};
-
           headers.forEach((header, index) => {
             record[header] = row[index] ?? "";
           });
-
           return record;
         });
 
         crmByDealId = new Map();
+        crmByLotNumber = new Map();
 
         crmRows.forEach(row => {
           const dealId = normalizeDealId(row["Deal ID"]);
-
           if (dealId) {
             crmByDealId.set(dealId, row);
+          }
+          
+          const lotNum = normalizeKey(row["Lot Number"]);
+          if (lotNum) {
+            crmByLotNumber.set(lotNum, row);
           }
         });
       }
@@ -471,8 +474,16 @@
           const dealId = normalizeDealId(
             feature.getProperty("deal_id") || feature.getId()
           );
+          
+          const geoLotNumber = normalizeKey(
+            feature.getProperty("lot_number") || feature.getProperty("Lot Number")
+          );
 
-          const crm = crmByDealId.get(dealId);
+          // Try matching by Deal ID first. If it fails, fallback to Lot Number.
+          let crm = crmByDealId.get(dealId);
+          if (!crm && geoLotNumber) {
+            crm = crmByLotNumber.get(geoLotNumber);
+          }
 
           feature.setProperty("crm_match_found", Boolean(crm));
 
@@ -485,8 +496,9 @@
           const lotStatus = getFirstValue(crm, ["Lot Status", "Status"]);
           const stage = getFirstValue(crm, ["Stage"]);
           const builder = getFirstValue(crm, ["Builder"]);
+          const architect = getFirstValue(crm, ["Architect"]); // Added Architect
           const name = getFirstValue(crm, ["Name", "Property Name"]);
-          const price = getFirstValue(crm, ["Price", "List Price", "Asking Price"]);
+          const price = getFirstValue(crm, ["Amount", "Price", "List Price", "Asking Price"]); // Added Amount
           const listingUrl = getFirstValue(crm, [
             "Listing URL",
             "Property URL",
@@ -508,6 +520,7 @@
           feature.setProperty("lot_status", lotStatus);
           feature.setProperty("stage", stage);
           feature.setProperty("builder", builder);
+          feature.setProperty("architect", architect); // Set Architect
           feature.setProperty(
             "name",
             name || feature.getProperty("name") || ""
@@ -759,7 +772,9 @@
             feature.getProperty("stage") || "Not specified";
           const builder =
             feature.getProperty("builder") || "Not specified";
-          const price = feature.getProperty("price") || "";
+          const architect =
+            feature.getProperty("architect") || "Not specified"; // Pulled Architect
+          const rawPrice = feature.getProperty("price"); // Handle Price formatting
           const listingUrl =
             feature.getProperty("listing_url") || "";
           const imageUrl =
@@ -776,6 +791,13 @@
             feature.getProperty("deal_id") || feature.getId() || "";
 
           const propertyTitle = name || address;
+          
+          // Format the price nicely if it is a valid number
+          let displayPrice = "";
+          if (rawPrice !== undefined && rawPrice !== null && String(rawPrice).trim() !== "") {
+            const numPrice = Number(String(rawPrice).replace(/[$,]/g, ""));
+            displayPrice = isNaN(numPrice) ? rawPrice : "$" + numPrice.toLocaleString();
+          }
 
           const content = `
             <div class="info-window">
@@ -799,11 +821,14 @@
                 <dt>Builder</dt>
                 <dd>${escapeHtml(builder)}</dd>
 
+                <dt>Architect</dt>
+                <dd>${escapeHtml(architect)}</dd>
+
                 ${
-                  price
+                  displayPrice
                     ? `
                       <dt>Price</dt>
-                      <dd>${escapeHtml(price)}</dd>
+                      <dd>${escapeHtml(displayPrice)}</dd>
                     `
                     : ""
                 }
