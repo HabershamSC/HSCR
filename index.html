@@ -13,7 +13,7 @@
     body { margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
     #map { width: 100vw; height: 100vh; }
     
-    /* Clean up the popup styling and ensure it scrolls if there is a lot of sheet data */
+    /* Clean up the popup styling */
     .popup-content { max-height: 250px; overflow-y: auto; padding-right: 10px; }
     .popup-content h3 { margin: 0 0 8px 0; font-size: 18px; color: #333; }
     .popup-content a { display: inline-block; margin-top: 8px; color: #007bff; text-decoration: none; }
@@ -37,11 +37,32 @@
     }
     #filter-container label { display: block; font-weight: bold; margin-bottom: 8px; color: #333; }
     #filter-container select { width: 100%; padding: 8px; border-radius: 4px; border: 1px solid #ccc; font-size: 14px; }
+
+    /* NEW: Styling for the Map Legend */
+    .legend {
+        background: rgba(255, 255, 255, 0.95);
+        padding: 10px 15px;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        line-height: 24px;
+        color: #333;
+        font-size: 14px;
+    }
+    .legend h4 { margin: 0 0 5px 0; font-size: 15px; }
+    .legend i {
+        width: 16px;
+        height: 16px;
+        float: left;
+        margin-right: 8px;
+        margin-top: 4px;
+        opacity: 0.8;
+        border: 1px solid #000;
+    }
   </style>
 </head>
 <body>
 
-  <!-- The filtration UI (Still filtering by Status) -->
+  <!-- The filtration UI -->
   <div id="filter-container">
       <label for="statusFilter">Filter by Status:</label>
       <select id="statusFilter">
@@ -61,7 +82,7 @@
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
   <script>
-    // Initialize the map centered roughly on Beaufort/Habersham, SC. Zoom level 16.
+    // Initialize the map
     const map = L.map('map').setView([32.4274, -80.7753], 16);
 
     // Esri High-Detail Satellite Base Map
@@ -70,30 +91,25 @@
       attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
     }).addTo(map);
 
-    // Global variables to hold data and map layer for filtering
     let rawGeojsonData = null;
     let geoJsonLayer = null;
 
     // Function to draw or redraw the map based on filters
     function renderMap(filterStatus) {
-        // Clear old shapes when switching filters
         if (geoJsonLayer) {
             map.removeLayer(geoJsonLayer);
         }
 
         geoJsonLayer = L.geoJSON(rawGeojsonData, {
           
-          // Filtering Logic remains tied to 'Status'
           filter: function(feature) {
               if (filterStatus === 'All') return true;
               return feature.properties.status === filterStatus;
           },
 
-          // NEW LOGIC: Styling based on 'Property Type'
           style: function (feature) {
-            let fillColor = '#6c757d'; // Default Gray for unknown types
+            let fillColor = '#6c757d'; // Default Gray
             
-            // Change these cases to match the exact spelling/capitalization from PipelineCRM
             switch (feature.properties.property_type) {
               case 'Lot': 
               case 'Land':
@@ -116,26 +132,22 @@
             }
 
             return {
-              color: '#000000',      // Black outline
-              weight: 1,             // Outline thickness
-              fillColor: fillColor,  // Dynamically set by Property Type
-              fillOpacity: 0.65      // Slightly increased opacity to pop against satellite
+              color: '#000000',
+              weight: 1,
+              fillColor: fillColor,
+              fillOpacity: 0.65
             };
           },
 
-          // Dynamic Popups mapping all properties
           onEachFeature: function (feature, layer) {
             const props = feature.properties;
-            
             let popupHtml = `<div class="popup-content">`;
             popupHtml += `<h3>${props.name || props.land_id_label || 'Property Details'}</h3>`;
             
             for (const [key, value] of Object.entries(props)) {
                 if (value !== null && value !== "" && value !== undefined && key !== 'name' && key !== 'land_id_label' && key !== 'listing_url') { 
-                    
                     let displayValue = (key === 'price' && !isNaN(value)) ? `$${Number(value).toLocaleString()}` : value;
                     let cleanKey = key.replace(/_/g, ' '); 
-                    
                     popupHtml += `<div class="prop-row"><strong>${cleanKey}:</strong> ${displayValue}</div>`;
                 }
             }
@@ -143,14 +155,43 @@
             if (props.listing_url) {
               popupHtml += `<a href="${props.listing_url}" target="_blank">View Full Listing →</a>`;
             }
-            
             popupHtml += `</div>`;
-            
             layer.bindPopup(popupHtml);
           }
 
         }).addTo(map);
     }
+
+    // NEW: Build and add the Legend Control
+    const legend = L.control({ position: 'bottomright' });
+
+    legend.onAdd = function (map) {
+        // Create a div with a class of "legend"
+        const div = L.DomUtil.create('div', 'legend');
+        
+        // Define the categories and exact colors used in the styling logic above
+        const categories = [
+            { label: 'Lot / Land', color: '#3388ff' },
+            { label: 'House', color: '#9b59b6' },
+            { label: 'Townhome', color: '#fd7e14' },
+            { label: 'Commercial', color: '#e74c3c' },
+            { label: 'Unimproved', color: '#28a745' },
+            { label: 'Other', color: '#6c757d' }
+        ];
+
+        div.innerHTML += '<h4>Property Type</h4><hr style="margin: 4px 0; border: 0; border-top: 1px solid #ccc;">';
+
+        // Loop through the categories and generate a color swatch for each
+        for (let i = 0; i < categories.length; i++) {
+            div.innerHTML +=
+                '<i style="background:' + categories[i].color + '"></i> ' + categories[i].label + '<br>';
+        }
+
+        return div;
+    };
+
+    // Add the legend to the map
+    legend.addTo(map);
 
     // Fetch the GeoJSON file
     fetch('habersham-parcels.geojson')
@@ -160,7 +201,7 @@
       })
       .then(geojsonData => {
         rawGeojsonData = geojsonData;
-        renderMap('All'); // Initial render shows everything
+        renderMap('All'); 
       })
       .catch(error => {
         console.error('Error loading map data:', error);
