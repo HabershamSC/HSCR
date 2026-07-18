@@ -4924,6 +4924,61 @@
         "coordinates": [
           [
             [
+              -80.77668965896163,
+              32.423312160767665
+            ],
+            [
+              -80.77690544296787,
+              32.42351212114307
+            ],
+            [
+              -80.77703434575199,
+              32.42363157077462
+            ],
+            [
+              -80.77680747731746,
+              32.423807054700845
+            ],
+            [
+              -80.77676188064807,
+              32.423744513064044
+            ],
+            [
+              -80.77672541335282,
+              32.42369449345204
+            ],
+            [
+              -80.77664792426974,
+              32.42334455915022
+            ],
+            [
+              -80.77668965896163,
+              32.423312160767665
+            ]
+          ]
+        ]
+      },
+      "properties": {
+        "lot_id": "LOT-90",
+        "deal_id": "2561601",
+        "lot_number": "90",
+        "name": "103 South Park",
+        "dmp_number": "301",
+        "property_type": "Single Family",
+        "status": "Improved",
+        "price": 910000,
+        "architect": "Moser Design Group",
+        "builder": "Brant Construction",
+        "land_id_label": "Lot 90"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
               -80.7726752899327,
               32.42196067155453
             ],
@@ -5168,6 +5223,70 @@
         "architect": "Allison Ramsey Architects",
         "builder": "Seaway Development",
         "land_id_label": "Lot 95"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -80.77624656999016,
+              32.42358076860124
+            ],
+            [
+              -80.77624578506841,
+              32.42358088304236
+            ],
+            [
+              -80.77623855487482,
+              32.42358193720005
+            ],
+            [
+              -80.77619924914326,
+              32.42338800470539
+            ],
+            [
+              -80.77634845131817,
+              32.423341386153005
+            ],
+            [
+              -80.77634912668975,
+              32.42334117513114
+            ],
+            [
+              -80.77643361784985,
+              32.42331477557916
+            ],
+            [
+              -80.77656341963065,
+              32.423320651395194
+            ],
+            [
+              -80.77660930769925,
+              32.42352788110381
+            ],
+            [
+              -80.77624656999016,
+              32.42358076860124
+            ]
+          ]
+        ]
+      },
+      "properties": {
+        "lot_id": "LOT-96",
+        "deal_id": "2561607",
+        "lot_number": "96",
+        "name": "120 Collin Campbell",
+        "dmp_number": "304",
+        "property_type": "Single Family",
+        "status": "Improved",
+        "stage": "Inactive",
+        "price": 0,
+        "architect": "LiveWell Home Design",
+        "builder": "Chandler Trask Construction",
+        "land_id_label": "Lot 96"
       }
     },
     {
