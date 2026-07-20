@@ -1,7 +1,7 @@
 (() => {
   "use strict";
 
-  const APP_VERSION = "1.0.0";
+  const APP_VERSION = "2.0.0";
   const FALLBACK_COLOR = "#b8b8b8";
 
   const state = {
@@ -81,7 +81,9 @@
     dom.subtitle = document.getElementById("map-subtitle");
     dom.taxonomySection = document.getElementById("taxonomy-switcher-section");
     dom.taxonomySwitcher = document.getElementById("taxonomy-switcher");
-    dom.filterControls = document.getElementById("filter-controls");
+    dom.filterControlsPrimary = document.getElementById("filter-controls-primary");
+    dom.filterControlsSecondary = document.getElementById("filter-controls-secondary");
+    dom.moreFilters = document.getElementById("more-filters");
     dom.labelSection = document.getElementById("label-section");
     dom.labelToggle = document.getElementById("label-toggle");
     dom.labelToggleText = document.getElementById("label-toggle-text");
@@ -344,13 +346,14 @@
         properties[key] = value;
       });
 
-      const baseId = String(feature.getId() ?? getFieldValue(properties, "hscrFaceId") ?? `feature-${index + 1}`);
+      const baseId = String(feature.getId() ?? `feature-${index + 1}`);
       const record = {
         feature,
         properties,
         index,
         id: `${baseId}:${index}`,
-        center: getPreferredLabelPoint(properties) || getFeatureCenter(feature)
+        center: getPreferredLabelPoint(properties) || getFeatureCenter(feature),
+        hasPublicContent: hasPublicPopupContent(properties)
       };
 
       state.recordByFeature.set(feature, record);
@@ -369,15 +372,17 @@
       dom.taxonomySwitcher.appendChild(option);
     }
 
-    dom.taxonomySection.hidden = options.length <= 1;
+    dom.taxonomySection.hidden = options.length === 0;
   }
 
   function renderFilters() {
     state.filterState = {};
     state.filterControls.clear();
-    dom.filterControls.replaceChildren();
+    dom.filterControlsPrimary.replaceChildren();
+    dom.filterControlsSecondary.replaceChildren();
 
     const filters = Array.isArray(state.profile.filters) ? state.profile.filters : [];
+    let secondaryCount = 0;
 
     for (const filterConfigRaw of filters) {
       const filterConfig = typeof filterConfigRaw === "string"
@@ -437,8 +442,16 @@
       state.filterControls.set(fieldId, control);
 
       wrapper.append(label, control);
-      dom.filterControls.appendChild(wrapper);
+
+      if (filterConfig.section === "secondary") {
+        dom.filterControlsSecondary.appendChild(wrapper);
+        secondaryCount += 1;
+      } else {
+        dom.filterControlsPrimary.appendChild(wrapper);
+      }
     }
+
+    dom.moreFilters.hidden = secondaryCount === 0;
   }
 
   function scheduleFilterRefresh(fieldId, value) {
@@ -498,6 +511,7 @@
   function resolveTaxonomy(definition) {
     const type = definition.type || "categorical";
     if (type === "range") return resolveRangeTaxonomy(definition);
+    if (type === "date-range") return resolveDateRangeTaxonomy(definition);
     return resolveCategoricalTaxonomy(definition);
   }
 
@@ -601,6 +615,35 @@
     };
   }
 
+  function resolveDateRangeTaxonomy(definition) {
+    const categories = (definition.classes || []).map((item, index) => ({
+      key: `date-range:${index}`,
+      label: item.label || `Date Range ${index + 1}`,
+      color: item.color || FALLBACK_COLOR,
+      minAgeDays: item.minAgeDays,
+      maxAgeDays: item.maxAgeDays,
+      showWhenZero: Boolean(definition.showZeroCountConfiguredClasses),
+      configured: true
+    }));
+
+    const fallback = {
+      key: "__fallback__",
+      label: definition.fallback?.label || "Date Not Assigned",
+      color: definition.fallback?.color || FALLBACK_COLOR,
+      fallback: true,
+      showWhenZero: false
+    };
+    categories.push(fallback);
+
+    return {
+      type: "date-range",
+      label: definition.label || definition.field,
+      field: definition.field,
+      categories,
+      fallback
+    };
+  }
+
   function classifyRecord(record) {
     const raw = getFieldValue(record.properties, state.taxonomy.field);
     if (state.taxonomy.type === "range") {
@@ -610,6 +653,18 @@
         if (category.fallback) return false;
         const passesMin = category.min === null || category.min === undefined || numeric >= category.min;
         const passesMax = category.max === null || category.max === undefined || numeric <= category.max;
+        return passesMin && passesMax;
+      }) || state.taxonomy.fallback;
+    }
+
+    if (state.taxonomy.type === "date-range") {
+      const date = parseDateValue(raw);
+      if (!date) return state.taxonomy.fallback;
+      const ageDays = Math.max(0, Math.floor((Date.now() - date.getTime()) / 86400000));
+      return state.taxonomy.categories.find((category) => {
+        if (category.fallback) return false;
+        const passesMin = category.minAgeDays === null || category.minAgeDays === undefined || ageDays >= category.minAgeDays;
+        const passesMax = category.maxAgeDays === null || category.maxAgeDays === undefined || ageDays <= category.maxAgeDays;
         return passesMin && passesMax;
       }) || state.taxonomy.fallback;
     }
@@ -651,7 +706,11 @@
         }
       }
 
-      state.visualByFeature.set(record.feature, { visible, category });
+      state.visualByFeature.set(record.feature, {
+        visible,
+        category,
+        clickable: record.hasPublicContent
+      });
     }
 
     state.map.data.setStyle((feature) => styleFeature(feature));
@@ -673,9 +732,20 @@
   function recordPassesFilters(record) {
     for (const [fieldId, selectedValue] of Object.entries(state.filterState)) {
       if (isBlank(selectedValue)) continue;
-      const fieldValue = getFieldValue(record.properties, fieldId);
+
+      const definition = state.fields[fieldId] || {};
       const control = state.filterControls.get(fieldId);
       const isSearch = control?.tagName === "INPUT";
+
+      if (Array.isArray(definition.searchFields) && definition.searchFields.length) {
+        const matchesAny = definition.searchFields.some((searchFieldId) =>
+          normalize(getFieldValue(record.properties, searchFieldId)).includes(normalize(selectedValue))
+        );
+        if (!matchesAny) return false;
+        continue;
+      }
+
+      const fieldValue = getFieldValue(record.properties, fieldId);
 
       if (isSearch) {
         if (!normalize(fieldValue).includes(normalize(selectedValue))) return false;
@@ -696,7 +766,7 @@
 
     return {
       visible: true,
-      clickable: true,
+      clickable: visual.clickable !== false,
       fillColor: visual.category.color || FALLBACK_COLOR,
       fillOpacity: numberOr(style.fillOpacity, 0.5),
       strokeColor: style.strokeColor || "#ffffff",
@@ -814,10 +884,10 @@
     const retained = numberOrNull(
       state.metadata.retainedUnassignedCount ??
       state.metadata.retained_unassigned_count ??
-      state.metadata.unassignedMasterFaceCount ??
-      state.metadata.unassigned_master_face_count ??
       state.metadata.acceptedUnassignedCount ??
-      state.metadata.accepted_unassigned_count
+      state.metadata.accepted_unassigned_count ??
+      state.metadata.unassignedMasterFaceCount ??
+      state.metadata.unassigned_master_face_count
     );
     if (retained && retained > 0) {
       details.push(`${retained.toLocaleString()} unassigned parcel faces retained.`);
@@ -841,7 +911,7 @@
 
   function openFeaturePopup(feature, position) {
     const record = state.recordByFeature.get(feature);
-    if (!record) return;
+    if (!record || !record.hasPublicContent) return;
 
     state.selectedFeature = feature;
     state.infoWindow.setContent(buildPopupContent(record));
@@ -850,21 +920,75 @@
   }
 
   function buildPopupContent(record) {
-    const root = document.createElement("div");
+    const root = document.createElement("article");
     root.className = "ham-info-window";
 
-    const title = document.createElement("h2");
     const propertyName = getFieldValue(record.properties, "propertyName");
     const lotNumber = getFieldValue(record.properties, "lotNumber");
+    const dmpNumber = getFieldValue(record.properties, "dmpNumber");
+
+    const header = document.createElement("header");
+    header.className = "ham-popup-header";
+
+    const title = document.createElement("h2");
     title.textContent = !isBlank(propertyName)
       ? String(propertyName)
       : !isBlank(lotNumber)
         ? `Lot ${lotNumber}`
         : "Property Details";
-    root.appendChild(title);
+    header.appendChild(title);
 
-    const grid = document.createElement("div");
+    const metaParts = [];
+    if (!isBlank(lotNumber)) metaParts.push(`Lot ${lotNumber}`);
+    if (!isBlank(dmpNumber)) metaParts.push(`DMP# ${dmpNumber}`);
+
+    if (metaParts.length) {
+      const meta = document.createElement("p");
+      meta.className = "ham-popup-meta";
+      meta.textContent = metaParts.join(" · ");
+      header.appendChild(meta);
+    }
+
+    const badgeValues = [
+      getFieldValue(record.properties, "lotStatus"),
+      getFieldValue(record.properties, "stage"),
+      getFieldValue(record.properties, "listingStatus")
+    ].filter((value, index, values) =>
+      !isBlank(value) &&
+      values.findIndex((candidate) => normalize(candidate) === normalize(value)) === index
+    );
+
+    if (badgeValues.length) {
+      const badges = document.createElement("div");
+      badges.className = "ham-popup-badges";
+      for (const value of badgeValues) {
+        const badge = document.createElement("span");
+        badge.className = "ham-popup-badge";
+        badge.textContent = String(value);
+        badges.appendChild(badge);
+      }
+      header.appendChild(badges);
+    }
+
+    root.appendChild(header);
+
+    const detailFieldIds = new Set([
+      "platDimensions",
+      "propertyType",
+      "squareFootageHeated",
+      "amount",
+      "updated",
+      "neighborhoodZoning",
+      "neighborhoodDistrict",
+      "architect",
+      "builder",
+      "planName"
+    ]);
+
+    const grid = document.createElement("dl");
     grid.className = "ham-popup-grid";
+
+    const actions = [];
     let imageUrl = "";
 
     for (const fieldConfigRaw of state.profile.popupFields || []) {
@@ -876,32 +1000,66 @@
       if (!definition) continue;
 
       const value = getFieldValue(record.properties, fieldId);
-      if (isBlank(value) && fieldConfig.hideEmpty !== false) continue;
+      if (isBlank(value)) continue;
 
-      if ((fieldConfig.format || definition.format) === "image") {
+      const format = fieldConfig.format || definition.format;
+
+      if (format === "image") {
         if (isSafeHttpUrl(value)) imageUrl = String(value);
         continue;
       }
 
+      if (format === "link") {
+        if (isSafeHttpUrl(value)) {
+          actions.push({
+            href: String(value),
+            label: fieldConfig.buttonLabel || definition.buttonLabel || `Open ${definition.label}`
+          });
+        }
+        continue;
+      }
+
+      if (!detailFieldIds.has(fieldId)) continue;
+
       const row = document.createElement("div");
       row.className = "ham-popup-row";
 
-      const label = document.createElement("div");
+      const label = document.createElement("dt");
       label.className = "ham-popup-label";
       label.textContent = fieldConfig.label || definition.label || fieldId;
 
-      const output = document.createElement("div");
+      const output = document.createElement("dd");
       output.className = "ham-popup-value";
-      appendFormattedValue(output, value, fieldConfig.format || definition.format);
+      appendFormattedValue(output, value, format);
 
       row.append(label, output);
       grid.appendChild(row);
     }
 
-    root.appendChild(grid);
+    if (grid.childElementCount) {
+      root.appendChild(grid);
+    }
+
+    if (actions.length) {
+      const actionRow = document.createElement("div");
+      actionRow.className = "ham-popup-actions";
+
+      for (const action of actions) {
+        const anchor = document.createElement("a");
+        anchor.className = "ham-popup-action";
+        anchor.href = action.href;
+        anchor.target = "_blank";
+        anchor.rel = "noopener noreferrer";
+        anchor.textContent = action.label;
+        actionRow.appendChild(anchor);
+      }
+
+      root.appendChild(actionRow);
+    }
 
     if (imageUrl) {
       const link = document.createElement("a");
+      link.className = "ham-popup-image-link";
       link.href = imageUrl;
       link.target = "_blank";
       link.rel = "noopener noreferrer";
@@ -927,27 +1085,31 @@
       const numeric = toNumber(value);
       container.textContent = numeric === null
         ? String(value ?? "")
-        : new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(numeric);
+        : new Intl.NumberFormat("en-US", {
+            style: "currency",
+            currency: "USD",
+            maximumFractionDigits: 0
+          }).format(numeric);
       return;
     }
 
-    if (format === "link" && isSafeHttpUrl(value)) {
-      const anchor = document.createElement("a");
-      anchor.href = String(value);
-      anchor.target = "_blank";
-      anchor.rel = "noopener noreferrer";
-      anchor.textContent = "Open record";
-      container.appendChild(anchor);
+    if (format === "squareFeet") {
+      const numeric = toNumber(value);
+      container.textContent = numeric === null
+        ? String(value ?? "")
+        : `${new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 }).format(numeric)} sq. ft.`;
       return;
     }
 
-    if (isSafeHttpUrl(value)) {
-      const anchor = document.createElement("a");
-      anchor.href = String(value);
-      anchor.target = "_blank";
-      anchor.rel = "noopener noreferrer";
-      anchor.textContent = String(value);
-      container.appendChild(anchor);
+    if (format === "date") {
+      const date = parseDateValue(value);
+      container.textContent = date
+        ? new Intl.DateTimeFormat("en-US", {
+            year: "numeric",
+            month: "short",
+            day: "numeric"
+          }).format(date)
+        : String(value ?? "");
       return;
     }
 
@@ -1196,6 +1358,49 @@
       dom.errorDetailsWrap.hidden = false;
     }
     dom.errorPanel.hidden = false;
+  }
+
+  function hasPublicPopupContent(properties) {
+    const approvedFields = [
+      "propertyName",
+      "lotNumber",
+      "dmpNumber",
+      "lotStatus",
+      "platDimensions",
+      "propertyType",
+      "squareFootageHeated",
+      "stage",
+      "listingStatus",
+      "amount",
+      "updated",
+      "neighborhoodZoning",
+      "neighborhoodDistrict",
+      "architect",
+      "builder",
+      "planName",
+      "arbFolderLink",
+      "photoArchiveLink",
+      "imageUrl"
+    ];
+
+    return approvedFields.some((fieldId) => !isBlank(getFieldValue(properties, fieldId)));
+  }
+
+  function parseDateValue(value) {
+    if (value instanceof Date && !Number.isNaN(value.getTime())) return value;
+    if (isBlank(value)) return null;
+
+    const raw = String(value).trim();
+    const direct = new Date(raw);
+    if (!Number.isNaN(direct.getTime())) return direct;
+
+    const match = raw.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})(?:\s+.*)?$/);
+    if (match) {
+      const parsed = new Date(Number(match[3]), Number(match[1]) - 1, Number(match[2]));
+      return Number.isNaN(parsed.getTime()) ? null : parsed;
+    }
+
+    return null;
   }
 
   function formatDateTime(value) {

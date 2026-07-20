@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="description" content="Profile-driven Habersham Active Mapping application.">
+  <meta name="description" content="Habersham Active Mapping">
   <title>Habersham Active Mapping</title>
   <link rel="stylesheet" href="./map.css">
 </head>
@@ -17,41 +17,58 @@
           <h1 id="map-title">Habersham Active Mapping</h1>
           <p id="map-subtitle" class="map-subtitle" hidden></p>
         </div>
-        <button id="panel-toggle" class="panel-toggle" type="button" aria-expanded="true" aria-controls="panel-body" title="Collapse map controls">
+        <button
+          id="panel-toggle"
+          class="panel-toggle"
+          type="button"
+          aria-expanded="true"
+          aria-controls="panel-body"
+          title="Collapse map controls"
+        >
           <span aria-hidden="true">−</span>
           <span class="sr-only">Collapse map controls</span>
         </button>
       </header>
 
       <div id="panel-body" class="panel-body">
-        <section id="taxonomy-switcher-section" class="control-section" hidden>
-          <label class="control-label" for="taxonomy-switcher">Map Key</label>
+        <section id="taxonomy-switcher-section" class="panel-section" aria-labelledby="map-view-heading">
+          <h2 id="map-view-heading" class="panel-section-title">Map View</h2>
+          <label class="control-label" for="taxonomy-switcher">Color Map By</label>
           <select id="taxonomy-switcher" class="control-input"></select>
         </section>
 
-        <section id="filter-section" class="control-section" aria-labelledby="filter-heading">
-          <h2 id="filter-heading" class="sr-only">Filter properties</h2>
-          <div id="filter-controls" class="filter-controls"></div>
+        <section id="filter-section" class="panel-section" aria-labelledby="find-heading">
+          <h2 id="find-heading" class="panel-section-title">Find Properties</h2>
+          <div id="filter-controls-primary" class="filter-controls"></div>
+
+          <details id="more-filters" class="more-filters">
+            <summary>More Filters</summary>
+            <div id="filter-controls-secondary" class="filter-controls secondary-filter-controls"></div>
+          </details>
         </section>
 
-        <section id="label-section" class="control-section label-section" hidden>
-          <label class="checkbox-control">
-            <input id="label-toggle" type="checkbox">
-            <span id="label-toggle-text">Show Lot Number labels</span>
-          </label>
-        </section>
+        <section class="panel-section display-section" aria-labelledby="display-heading">
+          <h2 id="display-heading" class="panel-section-title">Display</h2>
 
-        <div class="button-row">
+          <div id="label-section" class="label-section" hidden>
+            <label class="checkbox-control">
+              <input id="label-toggle" type="checkbox">
+              <span id="label-toggle-text">Show Lot Number labels</span>
+            </label>
+          </div>
+
           <button id="clear-filters" class="primary-button" type="button">Clear Filters</button>
-        </div>
+        </section>
 
-        <section id="legend-section" class="legend-section" aria-labelledby="legend-title" hidden>
+        <section id="legend-section" class="panel-section legend-section" aria-labelledby="legend-title" hidden>
           <div class="section-heading-row">
-            <h2 id="legend-title">Map Key</h2>
+            <h2 id="legend-title" class="panel-section-title">Map Key</h2>
             <button id="legend-reset" class="text-button" type="button" hidden>Show all</button>
           </div>
           <div id="map-legend" class="map-legend"></div>
-          <p id="legend-help" class="legend-help" hidden>Click a key item to show or hide it. Shift-click to isolate it.</p>
+          <p id="legend-help" class="legend-help" hidden>
+            Click a key item to show or hide it. Shift-click to isolate it.
+          </p>
         </section>
 
         <footer class="panel-footer">

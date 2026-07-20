@@ -1,116 +1,166 @@
 /*
- * Canonical field definitions.
- * `keys` permits a transition from legacy GeoJSON property names to the canonical names.
+ * Habersham Active Mapping public field contract.
+ *
+ * Only approved public CRM fields and the four label-rendering fields are defined.
+ * Private identifiers, internal IDs and unknown CRM columns are intentionally absent.
  */
 window.HAM_FIELDS = Object.freeze({
+  searchAll: {
+    label: "Search",
+    control: "search",
+    placeholder: "Name, Lot Number, or DMP#…",
+    searchFields: ["propertyName", "lotNumber", "dmpNumber"]
+  },
+
   propertyName: {
     label: "Name",
-    keys: ["propertyName", "Property Name", "name", "Name", "dealName", "Deal Name"],
-    control: "search",
-    placeholder: "Search name…"
+    keys: ["name", "propertyName", "Property Name", "Name"],
+    control: "search"
   },
 
   lotNumber: {
     label: "Lot Number",
-    keys: ["lotNumber", "Lot Number", "lot_number", "LOT_NUMBER", "lot", "Lot"],
+    keys: ["lot_number", "lotNumber", "Lot Number", "LOT_NUMBER", "lot", "Lot"],
     control: "select",
-    placeholder: "Search lot…",
     allLabel: "All"
   },
 
   dmpNumber: {
-    label: "DMP Number",
-    keys: ["dmpNumber", "Dmp Number", "DMP Number", "dmp_number"]
+    label: "DMP#",
+    keys: ["dmp_number", "dmpNumber", "DMP Number", "DMP#"]
+  },
+
+  lotStatus: {
+    label: "Lot Status",
+    keys: ["lot_status", "lotStatus", "Lot Status", "status", "Status"],
+    control: "select",
+    allLabel: "All"
+  },
+
+  platDimensions: {
+    label: "Plat Dimensions",
+    keys: ["plat_dimensions", "platDimensions", "Plat Dimensions"],
+    control: "select",
+    allLabel: "All"
   },
 
   propertyType: {
     label: "Property Type",
-    keys: ["propertyType", "Property Type", "property_type", "type", "Type"],
+    keys: ["property_type", "propertyType", "Property Type", "type", "Type"],
     control: "select",
     allLabel: "All"
   },
 
-  status: {
-    label: "Status",
-    keys: ["status", "Status", "lotStatus", "Lot Status", "lot_status", "LOT_STATUS", "dealStatus", "Deal Status", "deal_status"],
-    control: "select",
-    allLabel: "All"
+  squareFootageHeated: {
+    label: "Square Footage (Heated)",
+    keys: [
+      "square_footage_heated",
+      "squareFootageHeated",
+      "Square Footage (Heated)",
+      "heated_square_footage",
+      "heated_sq_ft"
+    ],
+    format: "squareFeet"
   },
 
   stage: {
     label: "Stage",
-    keys: ["stage", "Stage", "dealStage", "Deal Stage", "pipelineStage", "Pipeline Stage"],
+    keys: ["stage", "Stage", "dealStage", "Deal Stage"],
     control: "select",
     allLabel: "All"
   },
 
-  builder: {
-    label: "Builder",
-    keys: ["builder", "Builder", "builderName", "Builder Name"],
+  listingStatus: {
+    label: "Listing Status",
+    keys: ["listing_status", "listingStatus", "Listing Status"],
+    control: "select",
+    allLabel: "All"
+  },
+
+  amount: {
+    label: "Amount",
+    keys: ["amount", "Amount", "price", "Price", "listing_price"],
+    format: "currency"
+  },
+
+  updated: {
+    label: "Updated",
+    keys: ["updated", "Updated", "updated_at", "last_updated"],
+    format: "date"
+  },
+
+  neighborhoodZoning: {
+    label: "Neighborhood Zoning",
+    keys: ["neighborhood_zoning", "neighborhoodZoning", "Neighborhood Zoning", "zoning"],
+    control: "select",
+    allLabel: "All"
+  },
+
+  neighborhoodDistrict: {
+    label: "Neighborhood District",
+    keys: ["neighborhood_district", "neighborhoodDistrict", "Neighborhood District", "district"],
     control: "select",
     allLabel: "All"
   },
 
   architect: {
     label: "Architect",
-    keys: ["architect", "Architect", "architectName", "Architect Name"],
+    keys: ["architect", "Architect"],
     control: "select",
     allLabel: "All"
   },
 
-  hscrFaceId: {
-    label: "HSCR Face ID",
-    keys: ["hscrFaceId", "HSCR Face ID", "hscr_face_id", "faceId", "Face ID", "geometry_face_id", "lot_id", "feature_id"]
+  builder: {
+    label: "Builder",
+    keys: ["builder", "Builder"],
+    control: "select",
+    allLabel: "All"
   },
 
-  dealId: {
-    label: "Pipeline Deal ID",
-    keys: ["dealId", "Deal ID", "deal_id", "pipelineDealId", "Pipeline Deal ID", "pipeline_id"]
+  planName: {
+    label: "Habersham Plan Name",
+    keys: ["habersham_plan_name", "planName", "Habersham Plan Name", "plan_name"],
+    control: "select",
+    allLabel: "All"
   },
 
-  price: {
-    label: "Price",
-    keys: ["price", "Price", "listPrice", "List Price", "amount", "Amount"],
-    format: "currency"
+  arbFolderLink: {
+    label: "ARB Folder",
+    keys: ["arb_folder_link", "arbFolderLink", "ARB Folder Link (Drive)"],
+    format: "link",
+    buttonLabel: "View ARB Folder"
   },
 
-  primaryImage: {
-    label: "Primary Image",
-    keys: ["primaryImage", "Primary Image", "primary_image", "image", "Image", "image_url"],
+  photoArchiveLink: {
+    label: "Photo Archive",
+    keys: ["photo_archive_link", "photoArchiveLink", "Photo Archive (Drive)"],
+    format: "link",
+    buttonLabel: "View Photo Archive"
+  },
+
+  imageUrl: {
+    label: "Image",
+    keys: ["image_url", "imageUrl", "Image URL", "primary_image", "primaryImage"],
     format: "image"
   },
 
-  dealUrl: {
-    label: "Public Listing",
-    keys: [
-      "dealUrl", "Deal URL", "deal_url",
-      "listingUrl", "Listing URL", "listing_url",
-      "publicListingUrl", "Public Listing URL", "public_listing_url",
-      "pipelineUrl", "Pipeline URL", "pipeline_url", "recordUrl"
-    ],
-    format: "link"
-  },
-
   labelText: {
-    label: "Lot Number",
-    keys: [
-      "labelText", "label_text", "mapLabel", "map_label", "land_id_label",
-      "lotNumber", "Lot Number", "lot_number", "LOT_NUMBER", "lot", "Lot"
-    ]
+    label: "Label Text",
+    keys: ["label_text", "labelText", "land_id_label"]
   },
 
   labelLatitude: {
     label: "Label Latitude",
-    keys: ["labelLatitude", "label_latitude"]
+    keys: ["label_latitude", "labelLatitude"]
   },
 
   labelLongitude: {
     label: "Label Longitude",
-    keys: ["labelLongitude", "label_longitude"]
+    keys: ["label_longitude", "labelLongitude"]
   },
 
   showLabel: {
     label: "Show Label",
-    keys: ["showLabel", "show_label"]
+    keys: ["show_label", "showLabel"]
   }
 });

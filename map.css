@@ -513,3 +513,274 @@ input[type="checkbox"] {
     display: none !important;
   }
 }
+
+
+/* =========================================================
+   Public taxonomy interface — version 2
+   ========================================================= */
+
+:root {
+  --panel-width: 332px;
+  --panel-gap: 10px;
+  --panel-radius: 10px;
+  --panel-bg: rgba(250, 251, 250, 0.96);
+  --panel-border: rgba(29, 58, 43, 0.18);
+  --brand: #2f6f4f;
+  --brand-hover: #24583e;
+  --soft-brand: rgba(47, 111, 79, 0.08);
+}
+
+.control-panel {
+  border-radius: var(--panel-radius);
+}
+
+.panel-header {
+  padding: 14px 14px 11px;
+  border-bottom: 1px solid rgba(29, 58, 43, 0.10);
+}
+
+.panel-header h1 {
+  font-size: 18px;
+  letter-spacing: -0.01em;
+}
+
+.panel-body {
+  padding: 10px 12px 12px;
+}
+
+.panel-section {
+  margin: 0 0 10px;
+  border: 1px solid rgba(29, 58, 43, 0.11);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.74);
+  padding: 10px;
+}
+
+.panel-section:last-of-type {
+  margin-bottom: 0;
+}
+
+.panel-section-title {
+  margin: 0 0 9px;
+  color: #24382e;
+  font-size: 12px;
+  line-height: 1.2;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.filter-controls {
+  gap: 8px;
+}
+
+.control-input {
+  min-height: 38px;
+  border-radius: 6px;
+  border-color: #b9c2bc;
+  padding: 7px 10px;
+}
+
+.control-input:hover {
+  border-color: #87978d;
+}
+
+.more-filters {
+  margin-top: 9px;
+  border-top: 1px solid #dde3df;
+  padding-top: 8px;
+}
+
+.more-filters[hidden] {
+  display: none;
+}
+
+.more-filters summary {
+  cursor: pointer;
+  color: var(--brand);
+  font-size: 12px;
+  font-weight: 700;
+  user-select: none;
+}
+
+.secondary-filter-controls {
+  margin-top: 9px;
+}
+
+.display-section .label-section {
+  margin: 0 0 9px;
+}
+
+.label-section {
+  border-radius: 6px;
+}
+
+.primary-button {
+  min-height: 38px;
+  border-radius: 6px;
+}
+
+.legend-section {
+  max-height: min(42vh, 360px);
+  border-top: 1px solid rgba(29, 58, 43, 0.11);
+  overflow: hidden;
+  padding-top: 10px;
+}
+
+.map-legend {
+  max-height: min(30vh, 270px);
+  overflow-y: auto;
+  padding-right: 2px;
+}
+
+.legend-row {
+  min-height: 28px;
+  border-radius: 5px;
+}
+
+.legend-swatch {
+  border-radius: 2px;
+}
+
+.panel-footer {
+  margin-top: 8px;
+  border-top: 0;
+  padding: 2px 2px 0;
+}
+
+.ham-info-window {
+  min-width: 285px;
+  max-width: 390px;
+  color: #24302a;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+.ham-popup-header {
+  padding: 1px 0 10px;
+}
+
+.ham-info-window h2 {
+  margin: 0;
+  color: #1f2d26;
+  font-size: 18px;
+  line-height: 1.25;
+}
+
+.ham-popup-meta {
+  margin: 4px 0 0;
+  color: #68736d;
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.ham-popup-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 9px;
+}
+
+.ham-popup-badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  border: 1px solid rgba(47, 111, 79, 0.18);
+  border-radius: 999px;
+  color: #28583f;
+  background: rgba(47, 111, 79, 0.09);
+  padding: 3px 8px;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.ham-popup-grid {
+  display: grid;
+  gap: 0;
+  margin: 0;
+  border-top: 1px solid #e0e5e2;
+}
+
+.ham-popup-row {
+  display: grid;
+  grid-template-columns: minmax(118px, 0.46fr) minmax(130px, 0.54fr);
+  gap: 10px;
+  padding: 7px 0;
+  border-bottom: 1px solid #e0e5e2;
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.ham-popup-label,
+.ham-popup-value {
+  margin: 0;
+}
+
+.ham-popup-label {
+  color: #38463f;
+  font-weight: 700;
+}
+
+.ham-popup-value {
+  min-width: 0;
+  color: #252b28;
+  overflow-wrap: anywhere;
+}
+
+.ham-popup-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-top: 11px;
+}
+
+.ham-popup-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 34px;
+  border-radius: 6px;
+  color: #fff;
+  background: var(--brand);
+  padding: 7px 10px;
+  font-size: 12px;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.ham-popup-action:hover,
+.ham-popup-action:focus-visible {
+  background: var(--brand-hover);
+}
+
+.ham-popup-image-link {
+  display: block;
+  margin-top: 11px;
+}
+
+.ham-popup-image {
+  display: block;
+  width: 100%;
+  max-height: 220px;
+  margin: 0;
+  border-radius: 7px;
+  object-fit: cover;
+}
+
+@media (max-width: 640px) {
+  :root {
+    --panel-width: 305px;
+  }
+
+  .panel-section {
+    padding: 9px;
+  }
+
+  .ham-info-window {
+    min-width: 245px;
+    max-width: 310px;
+  }
+
+  .ham-popup-row {
+    grid-template-columns: minmax(100px, 0.44fr) minmax(115px, 0.56fr);
+  }
+}

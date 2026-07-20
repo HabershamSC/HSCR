@@ -1,5 +1,5 @@
 /*
- * Habersham Active Mapping — root-level deployment configuration.
+ * Habersham Active Mapping — public-field root deployment configuration.
  * All application files and the Publisher GeoJSON live in the repository root.
  */
 window.HAM_RUNTIME = Object.freeze({
