@@ -60,7 +60,7 @@ window.HAM_FIELDS = Object.freeze({
 
   hscrFaceId: {
     label: "HSCR Face ID",
-    keys: ["hscrFaceId", "HSCR Face ID", "hscr_face_id", "faceId", "Face ID", "feature_id", "geometry_face_id", "lot_id"]
+    keys: ["hscrFaceId", "HSCR Face ID", "hscr_face_id", "faceId", "Face ID", "geometry_face_id", "lot_id", "feature_id"]
   },
 
   dealId: {
@@ -81,9 +81,22 @@ window.HAM_FIELDS = Object.freeze({
   },
 
   dealUrl: {
-    label: "Pipeline Record",
-    keys: ["dealUrl", "Deal URL", "deal_url", "pipelineUrl", "Pipeline URL", "pipeline_url", "recordUrl"],
+    label: "Public Listing",
+    keys: [
+      "dealUrl", "Deal URL", "deal_url",
+      "listingUrl", "Listing URL", "listing_url",
+      "publicListingUrl", "Public Listing URL", "public_listing_url",
+      "pipelineUrl", "Pipeline URL", "pipeline_url", "recordUrl"
+    ],
     format: "link"
+  },
+
+  labelText: {
+    label: "Lot Number",
+    keys: [
+      "labelText", "label_text", "mapLabel", "map_label", "land_id_label",
+      "lotNumber", "Lot Number", "lot_number", "LOT_NUMBER", "lot", "Lot"
+    ]
   },
 
   labelLatitude: {

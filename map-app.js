@@ -814,6 +814,8 @@
     const retained = numberOrNull(
       state.metadata.retainedUnassignedCount ??
       state.metadata.retained_unassigned_count ??
+      state.metadata.unassignedMasterFaceCount ??
+      state.metadata.unassigned_master_face_count ??
       state.metadata.acceptedUnassignedCount ??
       state.metadata.accepted_unassigned_count
     );

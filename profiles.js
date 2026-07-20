@@ -16,7 +16,7 @@ window.HAM_PROFILES = Object.freeze({
       { field: "builder", control: "select" }
     ],
     labels: {
-      field: "lotNumber",
+      field: "labelText",
       label: "Lot Number",
       toggleVisible: true,
       enabledByDefault: true,
@@ -62,7 +62,7 @@ window.HAM_PROFILES = Object.freeze({
       { field: "builder", control: "select" }
     ],
     labels: {
-      field: "lotNumber",
+      field: "labelText",
       label: "Lot Number",
       toggleVisible: true,
       enabledByDefault: false,
@@ -106,7 +106,7 @@ window.HAM_PROFILES = Object.freeze({
       { field: "propertyType", control: "select" }
     ],
     labels: {
-      field: "lotNumber",
+      field: "labelText",
       label: "Lot Number",
       toggleVisible: true,
       enabledByDefault: true,
@@ -150,7 +150,7 @@ window.HAM_PROFILES = Object.freeze({
       { field: "propertyType", control: "select" }
     ],
     labels: {
-      field: "lotNumber",
+      field: "labelText",
       label: "Lot Number",
       toggleVisible: true,
       enabledByDefault: true,
@@ -196,7 +196,7 @@ window.HAM_PROFILES = Object.freeze({
       { field: "architect", control: "select" }
     ],
     labels: {
-      field: "lotNumber",
+      field: "labelText",
       label: "Lot Number",
       toggleVisible: true,
       enabledByDefault: true,
