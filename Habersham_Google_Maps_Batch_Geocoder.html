@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Habersham Google Maps Batch Geocoder</title>
+<style>
+  body{font-family:system-ui,-apple-system,Segoe UI,sans-serif;max-width:920px;margin:32px auto;padding:0 20px;line-height:1.45}
+  h1{font-size:1.55rem} label{display:block;font-weight:650;margin-top:16px}
+  input[type=password],input[type=file]{width:100%;box-sizing:border-box;padding:10px;margin-top:6px}
+  button{padding:10px 14px;margin:16px 8px 0 0;cursor:pointer}
+  progress{width:100%;height:22px;margin-top:16px}.muted{color:#555}.error{color:#9b1c1c;white-space:pre-wrap}
+  #log{background:#f4f4f4;padding:12px;min-height:80px;white-space:pre-wrap;max-height:240px;overflow:auto}
+</style>
+</head>
+<body>
+<h1>Habersham Google Maps Batch Geocoder</h1>
+<p class="muted">Use the prepared <strong>Habersham_Google_Maps_Geocode_Input.csv</strong>. The API key remains in this browser and is not written into the output.</p>
+<label>Google Maps JavaScript API key
+  <input id="apiKey" type="password" autocomplete="off" placeholder="Paste key here">
+</label>
+<button id="loadApi">Load Google Maps</button>
+<span id="apiState" class="muted">Not loaded</span>
+<label>Input CSV
+  <input id="csvFile" type="file" accept=".csv,text/csv">
+</label>
+<button id="start" disabled>Start / Resume</button>
+<button id="pause" disabled>Pause</button>
+<button id="download" disabled>Download result CSV</button>
+<progress id="progress" value="0" max="1"></progress>
+<div id="summary" class="muted"></div>
+<pre id="log"></pre>
+<script>
+'use strict';
+const $=id=>document.getElementById(id);
+let geocoder=null, rows=[], results=[], running=false, index=0;
+const bounds={south:32.39,west:-80.82,north:32.46,east:-80.73};
+
+function log(msg){$('log').textContent=(msg+'\n'+$('log').textContent).slice(0,12000)}
+function sleep(ms){return new Promise(r=>setTimeout(r,ms))}
+function escapeCsv(v){v=String(v??'');return /[",\r\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v}
+function parseCsv(text){
+  text=text.replace(/^\uFEFF/,''); const out=[]; let row=[],field='',q=false;
+  for(let i=0;i<text.length;i++){
+    const c=text[i];
+    if(q){if(c==='"'&&text[i+1]==='"'){field+='"';i++}else if(c==='"'){q=false}else field+=c}
+    else if(c==='"'){q=true}else if(c===','){row.push(field);field=''}
+    else if(c==='\n'){row.push(field.replace(/\r$/,''));out.push(row);row=[];field=''}else field+=c;
+  }
+  if(field.length||row.length){row.push(field.replace(/\r$/,''));out.push(row)}
+  const headers=out.shift().map(x=>x.trim());
+  return out.filter(r=>r.some(x=>x!=='')).map(r=>Object.fromEntries(headers.map((h,i)=>[h,r[i]??''])));
+}
+function loadMaps(){
+  const key=$('apiKey').value.trim(); if(!key){$('apiState').textContent='Enter a key first';return}
+  $('loadApi').disabled=true;$('apiState').textContent='Loading…';
+  window.__mapsReady=()=>{geocoder=new google.maps.Geocoder();$('apiState').textContent='Loaded';$('start').disabled=!rows.length;delete window.__mapsReady};
+  const s=document.createElement('script');
+  s.src='https://maps.googleapis.com/maps/api/js?key='+encodeURIComponent(key)+'&callback=__mapsReady&v=weekly';s.async=true;s.defer=true;
+  s.onerror=()=>{$('apiState').textContent='Load failed—check key, API enablement, and website restrictions';$('loadApi').disabled=false};
+  document.head.appendChild(s);
+}
+function localResult(list){
+  return list.find(r=>{const p=r.geometry.location;const lat=p.lat(),lng=p.lng();return lat>=bounds.south&&lat<=bounds.north&&lng>=bounds.west&&lng<=bounds.east})||list[0];
+}
+async function geocodeOne(row,attempt=0){
+  const request={address:row['Google Query Address']||row['Name'],componentRestrictions:{country:'US',postalCode:'29906'},bounds:new google.maps.LatLngBounds({lat:bounds.south,lng:bounds.west},{lat:bounds.north,lng:bounds.east})};
+  return new Promise(resolve=>geocoder.geocode(request,async(list,status)=>{
+    if(status==='OVER_QUERY_LIMIT'&&attempt<8){await sleep(Math.min(1000*(attempt+1),8000));resolve(await geocodeOne(row,attempt+1));return}
+    if(status==='OK'&&list.length){
+      const r=localResult(list),p=r.geometry.location,lat=p.lat(),lng=p.lng();
+      resolve({...row,Latitude:lat.toFixed(8),Longitude:lng.toFixed(8),'Lat / Long':lat.toFixed(8)+', '+lng.toFixed(8),'Google Formatted Address':r.formatted_address||'','Google Location Type':r.geometry.location_type||'','Google Partial Match':r.partial_match?'TRUE':'FALSE','Google Status':'OK'});
+    } else resolve({...row,Latitude:'',Longitude:'','Lat / Long':'','Google Formatted Address':'','Google Location Type':'','Google Partial Match':'','Google Status':status});
+  }));
+}
+function updateUi(){
+  $('progress').max=Math.max(rows.length,1);$('progress').value=index;
+  const ok=results.filter(r=>r['Google Status']==='OK').length;
+  $('summary').textContent=`${index} of ${rows.length} processed; ${ok} OK; ${index-ok} unresolved/error.`;
+  $('download').disabled=!results.length;
+}
+async function run(){
+  if(!geocoder||!rows.length||running)return;running=true;$('start').disabled=true;$('pause').disabled=false;
+  while(running&&index<rows.length){
+    const result=await geocodeOne(rows[index]);results[index]=result;
+    log(`${index+1}/${rows.length} ${result['Deal ID']} ${result['Name']}: ${result['Google Status']}`);
+    index++;updateUi();
+    if(index%20===0)localStorage.setItem('habershamGeocodeProgress',JSON.stringify({index,results}));
+    await sleep(300);
+  }
+  running=false;$('pause').disabled=true;$('start').disabled=index>=rows.length;
+  if(index>=rows.length){localStorage.removeItem('habershamGeocodeProgress');log('Complete. Download the result CSV.')}
+}
+function downloadCsv(){
+  const headers=['Deal ID','Name','Latitude','Longitude','Lat / Long','Google Formatted Address','Google Location Type','Google Partial Match','Google Status','Google Query Address','Normalization Note'];
+  const lines=[headers.map(escapeCsv).join(',')];
+  for(const r of results.filter(Boolean))lines.push(headers.map(h=>escapeCsv(r[h])).join(','));
+  const blob=new Blob(['\uFEFF'+lines.join('\r\n')],{type:'text/csv;charset=utf-8'}),a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);a.download='Habersham_Google_Maps_Coordinates_IMPORT.csv';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+}
+$('loadApi').onclick=loadMaps;
+$('csvFile').onchange=async e=>{const f=e.target.files[0];if(!f)return;rows=parseCsv(await f.text());results=[];index=0;localStorage.removeItem('habershamGeocodeProgress');updateUi();$('start').disabled=!geocoder;log(`Loaded ${rows.length} rows.`)};
+$('start').onclick=run;$('pause').onclick=()=>{running=false;$('start').disabled=false};$('download').onclick=downloadCsv;
+window.addEventListener('beforeunload',()=>{if(results.length)localStorage.setItem('habershamGeocodeProgress',JSON.stringify({index,results}))});
+</script>
+</body>
+</html>
