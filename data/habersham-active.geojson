@@ -1,0 +1,9 @@
+{
+  "type": "FeatureCollection",
+  "metadata": {
+    "schemaVersion": "1.0",
+    "publishedAt": null,
+    "note": "Replace this placeholder with the current Publisher.gs GeoJSON output before deployment."
+  },
+  "features": []
+}
