@@ -56,3 +56,26 @@ Keep the root-level master geometry file. Replace the Publisher first and run it
 - `explorer.html`
 
 Every view uses one master UI and permits switching among the approved public taxonomies.
+
+
+## Interface refinement
+
+The **Color Map By** menu now includes only:
+
+- Lot Status
+- Property Type
+- Stage
+- Listing Status
+- Neighborhood Zoning
+- Neighborhood District
+- Architect
+- Builder
+
+The following remain available in clickable property information windows but are not map-color taxonomies:
+
+- Habersham Plan Name
+- Square Footage (Heated)
+- Amount
+- Updated
+
+Plat Dimensions remains in clickable property information windows but has been removed from Find Properties filters.

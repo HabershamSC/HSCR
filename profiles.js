@@ -1,6 +1,7 @@
 /*
  * Map profiles select the initial taxonomy while preserving the shared master UI.
- * Every profile exposes the same approved public taxonomy selector.
+ * Plan Name, Square Footage, Amount and Updated remain popup fields but are not color-map options.
+ * Plat Dimensions remains a popup field but is not a searchable filter.
  */
 window.HAM_PROFILES = Object.freeze({
   "default": {
@@ -13,11 +14,7 @@ window.HAM_PROFILES = Object.freeze({
       "neighborhoodZoning",
       "neighborhoodDistrict",
       "architect",
-      "builder",
-      "planName",
-      "squareFootageBand",
-      "amountBand",
-      "updatedRecency"
+      "builder"
     ],
     "filters": [
       {
@@ -47,11 +44,6 @@ window.HAM_PROFILES = Object.freeze({
       },
       {
         "field": "listingStatus",
-        "control": "select",
-        "section": "secondary"
-      },
-      {
-        "field": "platDimensions",
         "control": "select",
         "section": "secondary"
       },
@@ -142,11 +134,7 @@ window.HAM_PROFILES = Object.freeze({
       "neighborhoodZoning",
       "neighborhoodDistrict",
       "architect",
-      "builder",
-      "planName",
-      "squareFootageBand",
-      "amountBand",
-      "updatedRecency"
+      "builder"
     ],
     "filters": [
       {
@@ -176,11 +164,6 @@ window.HAM_PROFILES = Object.freeze({
       },
       {
         "field": "listingStatus",
-        "control": "select",
-        "section": "secondary"
-      },
-      {
-        "field": "platDimensions",
         "control": "select",
         "section": "secondary"
       },
@@ -271,11 +254,7 @@ window.HAM_PROFILES = Object.freeze({
       "neighborhoodZoning",
       "neighborhoodDistrict",
       "architect",
-      "builder",
-      "planName",
-      "squareFootageBand",
-      "amountBand",
-      "updatedRecency"
+      "builder"
     ],
     "filters": [
       {
@@ -305,11 +284,6 @@ window.HAM_PROFILES = Object.freeze({
       },
       {
         "field": "listingStatus",
-        "control": "select",
-        "section": "secondary"
-      },
-      {
-        "field": "platDimensions",
         "control": "select",
         "section": "secondary"
       },
@@ -400,11 +374,7 @@ window.HAM_PROFILES = Object.freeze({
       "neighborhoodZoning",
       "neighborhoodDistrict",
       "architect",
-      "builder",
-      "planName",
-      "squareFootageBand",
-      "amountBand",
-      "updatedRecency"
+      "builder"
     ],
     "filters": [
       {
@@ -434,11 +404,6 @@ window.HAM_PROFILES = Object.freeze({
       },
       {
         "field": "listingStatus",
-        "control": "select",
-        "section": "secondary"
-      },
-      {
-        "field": "platDimensions",
         "control": "select",
         "section": "secondary"
       },
@@ -529,11 +494,7 @@ window.HAM_PROFILES = Object.freeze({
       "neighborhoodZoning",
       "neighborhoodDistrict",
       "architect",
-      "builder",
-      "planName",
-      "squareFootageBand",
-      "amountBand",
-      "updatedRecency"
+      "builder"
     ],
     "filters": [
       {
@@ -563,11 +524,6 @@ window.HAM_PROFILES = Object.freeze({
       },
       {
         "field": "listingStatus",
-        "control": "select",
-        "section": "secondary"
-      },
-      {
-        "field": "platDimensions",
         "control": "select",
         "section": "secondary"
       },
