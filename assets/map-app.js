@@ -328,11 +328,11 @@
 
     state.metadata.detectedMissingGeometry = missingGeometry;
     const collection = { type: "FeatureCollection", features: validFeatures };
-    state.features = state.map.data.addGeoJson(collection);
+    state.features = state.map.data.addGeo(collection);
 
     if (!state.features.length) {
       throw new Error(
-        "The GeoJSON file loaded, but it contains no polygon features. Replace data/habersham-active.geojson with the current Publisher.gs output."
+        "The GeoJSON file loaded, but it contains no polygon features. Replace data/habersham-parcels.geojson with the current Publisher.gs output."
       );
     }
   }
