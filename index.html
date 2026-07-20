@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Habersham active property mapping">
+  <title>Habersham Active Mapping</title>
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <aside id="filters" aria-label="Property filters">
+    <h1>Habersham Active Mapping</h1>
+    <div class="filter-grid">
+      <label>Lot Number<select id="lotNumberFilter"><option value="">All</option></select></label>
+      <label>Property Type<select id="propertyTypeFilter"><option value="">All</option></select></label>
+      <label>Status<select id="statusFilter"><option value="">All</option></select></label>
+      <label>Stage<select id="stageFilter"><option value="">All</option></select></label>
+      <label>Builder<select id="builderFilter"><option value="">All</option></select></label>
+    </div>
+
+    <label class="label-toggle">
+      <input id="showLotLabelsToggle" type="checkbox" checked>
+      <span>Show Lot Number labels</span>
+    </label>
+
+    <button id="clearFiltersButton" type="button">Clear Filters</button>
+    <div id="mapStatus" role="status" aria-live="polite">Loading map data…</div>
+  </aside>
+  <main id="map" aria-label="Habersham parcel map"></main>
+
+  <script src="./app.js"></script>
+  <script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBxUzPZYFuNou4HVQlVcrvkIUgHWbGuJd0&callback=initMap&v=weekly"></script>
+</body>
+</html>
