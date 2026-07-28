@@ -1,8 +1,18 @@
 (() => {
   "use strict";
 
-  const APP_VERSION = "2.0.0";
+  const APP_VERSION = "2.0.1-master-plan";
   const FALLBACK_COLOR = "#b8b8b8";
+  const AUTO_PALETTE = [
+    "#457b9d",
+    "#2a9d8f",
+    "#e76f51",
+    "#8e6caa",
+    "#6a994e",
+    "#d4a72c",
+    "#4e8098",
+    "#a26769"
+  ];
 
   const state = {
     runtime: window.HAM_RUNTIME || {},
@@ -31,7 +41,11 @@
 
   const dom = {};
 
-  document.addEventListener("DOMContentLoaded", boot);
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", boot, { once: true });
+  } else {
+    boot();
+  }
 
   async function boot() {
     cacheDom();
@@ -40,7 +54,7 @@
     try {
       validateConfiguration();
       resolveProfile();
-      lyProfileText();
+      applyProfileText();
       setLoading("Loading map data…");
 
       const [payload] = await Promise.all([
@@ -58,65 +72,83 @@
       renderFilters();
       configureLabels();
       activateTaxonomy(getRequestedTaxonomyId());
-      lyUrlState();
+      applyUrlState();
       refreshMap({ updateUrl: false });
       fitInitialViewport();
+      exposePublicApi();
 
       setLoading(null);
-      dom..setAttribute("aria-busy", "false");
-      exposePublicApi();
-      debug("lication ready", { version: APP_VERSION, profile: state.profileId });
+      dom.app.setAttribute("aria-busy", "false");
+      debug("Application ready", {
+        version: APP_VERSION,
+        profile: state.profileId,
+        features: state.records.length
+      });
     } catch (error) {
       showError(error);
     }
   }
 
   function cacheDom() {
-    dom.app = document.getElementById("app");
-    dom.map = document.getElementById("map");
-    dom.panel = document.getElementById("control-panel");
-    dom.panelToggle = document.getElementById("panel-toggle");
-    dom.panelBody = document.getElementById("panel-body");
-    dom.title = document.getElementById("map-title");
-    dom.subtitle = document.getElementById("map-subtitle");
-    dom.taxonomySection = document.getElementById("taxonomy-switcher-section");
-    dom.taxonomySwitcher = document.getElementById("taxonomy-switcher");
-    dom.filterControlsPrimary = document.getElementById("filter-controls-primary");
-    dom.filterControlsSecondary = document.getElementById("filter-controls-secondary");
-    dom.moreFilters = document.getElementById("more-filters");
-    dom.labelSection = document.getElementById("label-section");
-    dom.labelToggle = document.getElementById("label-toggle");
-    dom.labelToggleText = document.getElementById("label-toggle-text");
-    dom.clearFilters = document.getElementById("clear-filters");
-    dom.legendSection = document.getElementById("legend-section");
-    dom.legendTitle = document.getElementById("legend-title");
-    dom.legend = document.getElementById("map-legend");
-    dom.legendReset = document.getElementById("legend-reset");
-    dom.legendHelp = document.getElementById("legend-help");
-    dom.featureStatus = document.getElementById("feature-status");
-    dom.dataStatus = document.getElementById("data-status");
-    dom.loadingOverlay = document.getElementById("loading-overlay");
-    dom.loadingMessage = document.getElementById("loading-message");
-    dom.errorPanel = document.getElementById("error-panel");
-    dom.errorMessage = document.getElementById("error-message");
-    dom.errorDetailsWrap = document.getElementById("error-details-wrap");
-    dom.errorDetails = document.getElementById("error-details");
+    dom.app = requiredElement("app");
+    dom.map = requiredElement("map");
+    dom.panel = requiredElement("control-panel");
+    dom.panelToggle = requiredElement("panel-toggle");
+    dom.panelBody = requiredElement("panel-body");
+    dom.title = requiredElement("map-title");
+    dom.subtitle = requiredElement("map-subtitle");
+    dom.taxonomySection = requiredElement("taxonomy-switcher-section");
+    dom.taxonomySwitcher = requiredElement("taxonomy-switcher");
+    dom.filterControlsPrimary = requiredElement("filter-controls-primary");
+    dom.filterControlsSecondary = requiredElement("filter-controls-secondary");
+    dom.moreFilters = requiredElement("more-filters");
+    dom.labelSection = requiredElement("label-section");
+    dom.labelToggle = requiredElement("label-toggle");
+    dom.labelToggleText = requiredElement("label-toggle-text");
+    dom.clearFilters = requiredElement("clear-filters");
+    dom.legendSection = requiredElement("legend-section");
+    dom.legendTitle = requiredElement("legend-title");
+    dom.legend = requiredElement("map-legend");
+    dom.legendReset = requiredElement("legend-reset");
+    dom.legendHelp = requiredElement("legend-help");
+    dom.featureStatus = requiredElement("feature-status");
+    dom.dataStatus = requiredElement("data-status");
+    dom.loadingOverlay = requiredElement("loading-overlay");
+    dom.loadingMessage = requiredElement("loading-message");
+    dom.errorPanel = requiredElement("error-panel");
+    dom.errorMessage = requiredElement("error-message");
+    dom.errorDetailsWrap = requiredElement("error-details-wrap");
+    dom.errorDetails = requiredElement("error-details");
+  }
+
+  function requiredElement(id) {
+    const element = document.getElementById(id);
+    if (!element) throw new Error(`index.html is missing required element #${id}.`);
+    return element;
   }
 
   function bindStaticUi() {
     dom.panelToggle.addEventListener("click", () => {
       const collapsed = dom.panel.classList.toggle("is-collapsed");
       dom.panelToggle.setAttribute("aria-expanded", String(!collapsed));
-      dom.panelToggle.title = collapsed ? "Expand map controls" : "Collapse map controls";
-      dom.panelToggle.querySelector("[aria-hidden='true']").textContent = collapsed ? "+" : "−";
-      dom.panelToggle.querySelector(".sr-only").textContent = collapsed ? "Expand map controls" : "Collapse map controls";
+      dom.panelToggle.title = collapsed
+        ? "Expand map controls"
+        : "Collapse map controls";
+
+      const symbol = dom.panelToggle.querySelector("[aria-hidden='true']");
+      const accessibleText = dom.panelToggle.querySelector(".sr-only");
+      if (symbol) symbol.textContent = collapsed ? "+" : "−";
+      if (accessibleText) {
+        accessibleText.textContent = collapsed
+          ? "Expand map controls"
+          : "Collapse map controls";
+      }
     });
 
     dom.clearFilters.addEventListener("click", clearFilters);
+
     dom.labelToggle.addEventListener("change", () => {
-      if (state.labelLayer) {
-        state.labelLayer.setEnabled(dom.labelToggle.checked);
-      }
+      if (state.labelLayer) state.labelLayer.setEnabled(dom.labelToggle.checked);
       refreshMap();
     });
 
@@ -136,29 +168,28 @@
       throw new Error("runtime.js did not define HAM_RUNTIME.");
     }
     if (!Object.keys(state.fields).length) {
-      throw new Error("fields.js did not define any fields.");
+      throw new Error("fields.js did not define HAM_FIELDS.");
     }
     if (!Object.keys(state.taxonomies).length) {
-      throw new Error("taxonomies.js did not define any taxonomies.");
+      throw new Error("taxonomies.js did not define HAM_TAXONOMIES.");
     }
     if (!Object.keys(state.profiles).length) {
-      throw new Error("profiles.js did not define any profiles.");
+      throw new Error("profiles.js did not define HAM_PROFILES.");
     }
   }
 
   function resolveProfile() {
     const params = new URLSearchParams(window.location.search);
     const requested = params.get("view") || state.runtime.defaultProfile || "default";
-    const fallbackId = state.runtime.defaultProfile && state.profiles[state.runtime.defaultProfile]
-      ? state.runtime.defaultProfile
+    const configuredDefault = state.runtime.defaultProfile;
+    const fallbackId = configuredDefault && state.profiles[configuredDefault]
+      ? configuredDefault
       : Object.keys(state.profiles)[0];
 
     state.profileId = state.profiles[requested] ? requested : fallbackId;
     state.profile = state.profiles[state.profileId];
 
-    if (!state.profile) {
-      throw new Error("No valid map profile is configured.");
-    }
+    if (!state.profile) throw new Error("No valid map profile is configured.");
   }
 
   function applyProfileText() {
@@ -169,6 +200,7 @@
       dom.subtitle.textContent = state.profile.subtitle;
       dom.subtitle.hidden = false;
     } else {
+      dom.subtitle.textContent = "";
       dom.subtitle.hidden = true;
     }
   }
@@ -176,7 +208,7 @@
   async function loadGeoJson() {
     const configuredUrl = state.profile.dataUrl || state.runtime.dataUrl;
     if (!configuredUrl) {
-      throw new Error("No GeoJSON data URL is configured in runtime.js or the active profile.");
+      throw new Error("No GeoJSON URL is configured in runtime.js or the active profile.");
     }
 
     const url = new URL(configuredUrl, window.location.href);
@@ -192,7 +224,7 @@
     try {
       return await response.json();
     } catch (error) {
-      throw new Error(`The data file is not valid JSON: ${error.message}`);
+      throw new Error(`The GeoJSON data is not valid JSON: ${error.message}`);
     }
   }
 
@@ -205,7 +237,7 @@
       return payload;
     }
 
-    if (payload.geojson && payload.geojson.type === "FeatureCollection") {
+    if (payload.geojson?.type === "FeatureCollection") {
       return {
         ...payload.geojson,
         metadata: payload.metadata || payload.geojson.metadata || {}
@@ -216,14 +248,12 @@
   }
 
   function loadGoogleMaps() {
-    if (window.google && window.google.maps) {
-      return Promise.resolve();
-    }
+    if (window.google?.maps) return Promise.resolve();
 
     const apiKey = String(state.runtime.googleMapsApiKey || "").trim();
     if (!apiKey || apiKey.includes("REPLACE_WITH")) {
       throw new Error(
-        "A Google Maps browser API key has not been configured. Open runtime.js and provide the Google Maps browser key."
+        "A Google Maps browser API key has not been configured in runtime.js."
       );
     }
 
@@ -231,8 +261,8 @@
       const callbackName = `__hamGoogleMapsReady_${Date.now()}`;
       const timeout = window.setTimeout(() => {
         cleanup();
-        reject(new Error("Google Maps did not finish loading within 25 seconds."));
-      }, 25000);
+        reject(new Error("Google Maps did not finish loading within 30 seconds."));
+      }, 30000);
 
       function cleanup() {
         window.clearTimeout(timeout);
@@ -248,7 +278,6 @@
         resolve();
       };
 
-      const script = document.createElement("script");
       const params = new URLSearchParams({
         key: apiKey,
         callback: callbackName,
@@ -257,12 +286,19 @@
         language: state.runtime.googleLanguage || "en",
         region: state.runtime.googleRegion || "US"
       });
+
+      const script = document.createElement("script");
       script.src = `https://maps.googleapis.com/maps/api/js?${params.toString()}`;
       script.async = true;
       script.onerror = () => {
         cleanup();
-        reject(new Error("Google Maps JavaScript API failed to load. Verify the API key, referrer restrictions and API enablement."));
+        reject(
+          new Error(
+            "Google Maps JavaScript API failed to load. Verify the browser key, website restrictions, API restriction, API enablement, and billing."
+          )
+        );
       };
+
       document.head.appendChild(script);
     });
   }
@@ -270,8 +306,8 @@
   function initializeMap() {
     const mapConfig = state.profile.map || {};
     const options = {
-      center: mapConfig.fallbackCenter || { lat: 32.40, lng: -80.75 },
-      zoom: mapConfig.fallbackZoom || 15,
+      center: mapConfig.fallbackCenter || { lat: 32.4, lng: -80.75 },
+      zoom: numberOr(mapConfig.fallbackZoom, 15),
       mapTypeId: mapConfig.mapTypeId || "satellite",
       mapTypeControl: Boolean(mapConfig.mapTypeControl),
       streetViewControl: mapConfig.streetViewControl !== false,
@@ -282,9 +318,7 @@
       gestureHandling: "greedy"
     };
 
-    if (state.runtime.googleMapId) {
-      options.mapId = state.runtime.googleMapId;
-    }
+    if (state.runtime.googleMapId) options.mapId = state.runtime.googleMapId;
 
     state.map = new google.maps.Map(dom.map, options);
     state.infoWindow = new google.maps.InfoWindow({ maxWidth: 390 });
@@ -292,7 +326,8 @@
 
     state.map.data.addListener("mouseover", (event) => {
       const visual = state.visualByFeature.get(event.feature);
-      if (!visual || !visual.visible) return;
+      if (!visual?.visible) return;
+
       const style = state.profile.style || {};
       state.map.data.overrideStyle(event.feature, {
         fillOpacity: numberOr(style.hoverFillOpacity, 0.74),
@@ -307,12 +342,12 @@
 
     state.map.data.addListener("click", (event) => {
       const visual = state.visualByFeature.get(event.feature);
-      if (!visual || !visual.visible) return;
+      if (!visual?.visible || visual.clickable === false) return;
       openFeaturePopup(event.feature, event.latLng);
     });
 
     state.map.addListener("zoom_changed", () => {
-      if (state.labelLayer) state.labelLayer.draw();
+      state.labelLayer?.draw();
     });
   }
 
@@ -321,20 +356,19 @@
     let missingGeometry = 0;
 
     for (const feature of state.payload.features) {
-      if (feature && feature.geometry) {
-        validFeatures.push(feature);
-      } else {
-        missingGeometry += 1;
-      }
+      if (feature?.geometry) validFeatures.push(feature);
+      else missingGeometry += 1;
     }
 
     state.metadata.detectedMissingGeometry = missingGeometry;
-    const collection = { type: "FeatureCollection", features: validFeatures };
-    state.features = state.map.data.addGeoJson(collection);
+    state.features = state.map.data.addGeoJson({
+      type: "FeatureCollection",
+      features: validFeatures
+    });
 
     if (!state.features.length) {
       throw new Error(
-        "The GeoJSON file loaded, but it contains no polygon features. Replace habersham-parcels.geojson in the repository root with the current Publisher.gs output."
+        "The GeoJSON loaded, but it contains no polygon features. Replace habersham-parcels.geojson with current Publisher.gs output."
       );
     }
   }
@@ -362,7 +396,9 @@
   }
 
   function renderTaxonomySwitcher() {
-    const options = (state.profile.taxonomyOptions || [state.profile.taxonomy]).filter((id) => state.taxonomies[id]);
+    const configured = state.profile.taxonomyOptions || [state.profile.taxonomy];
+    const options = configured.filter((id) => state.taxonomies[id]);
+
     dom.taxonomySwitcher.replaceChildren();
 
     for (const taxonomyId of options) {
@@ -384,11 +420,11 @@
     const filters = Array.isArray(state.profile.filters) ? state.profile.filters : [];
     let secondaryCount = 0;
 
-    for (const filterConfigRaw of filters) {
-      const filterConfig = typeof filterConfigRaw === "string"
-        ? { field: filterConfigRaw }
-        : filterConfigRaw;
-      const fieldId = filterConfig.field;
+    for (const rawConfig of filters) {
+      const config = typeof rawConfig === "string"
+        ? { field: rawConfig }
+        : rawConfig;
+      const fieldId = config.field;
       const field = state.fields[fieldId];
 
       if (!field) {
@@ -403,26 +439,28 @@
       const inputId = `filter-${fieldId}`;
       label.className = "control-label";
       label.htmlFor = inputId;
-      label.textContent = filterConfig.label || field.label || fieldId;
+      label.textContent = config.label || field.label || fieldId;
 
-      const controlType = filterConfig.control || field.control || "select";
+      const controlType = config.control || field.control || "select";
       let control;
 
       if (controlType === "search") {
         control = document.createElement("input");
         control.type = "search";
-        control.placeholder = filterConfig.placeholder || field.placeholder || `Search ${field.label || fieldId}…`;
+        control.placeholder = config.placeholder || field.placeholder || `Search ${field.label || fieldId}…`;
         control.autocomplete = "off";
-        control.addEventListener("input", () => scheduleFilterRefresh(fieldId, control.value));
+        control.addEventListener("input", () => {
+          scheduleFilterRefresh(fieldId, control.value);
+        });
       } else {
         control = document.createElement("select");
+
         const allOption = document.createElement("option");
         allOption.value = "";
-        allOption.textContent = filterConfig.allLabel || field.allLabel || "All";
+        allOption.textContent = config.allLabel || field.allLabel || "All";
         control.appendChild(allOption);
 
-        const values = getUniqueFieldValues(fieldId);
-        for (const value of values) {
+        for (const value of getUniqueFieldValues(fieldId)) {
           const option = document.createElement("option");
           option.value = value;
           option.textContent = value;
@@ -443,7 +481,7 @@
 
       wrapper.append(label, control);
 
-      if (filterConfig.section === "secondary") {
+      if (config.section === "secondary") {
         dom.filterControlsSecondary.appendChild(wrapper);
         secondaryCount += 1;
       } else {
@@ -462,6 +500,7 @@
 
   function getUniqueFieldValues(fieldId) {
     const values = new Map();
+
     for (const record of state.records) {
       const value = getFieldValue(record.properties, fieldId);
       if (isBlank(value)) continue;
@@ -473,8 +512,9 @@
   }
 
   function configureLabels() {
-    const labelConfig = state.profile.labels || {};
-    if (!labelConfig.toggleVisible) {
+    const config = state.profile.labels || {};
+
+    if (!config.toggleVisible) {
       dom.labelSection.hidden = true;
       dom.labelToggle.checked = false;
       state.labelLayer.setEnabled(false);
@@ -482,9 +522,9 @@
     }
 
     dom.labelSection.hidden = false;
-    dom.labelToggle.checked = labelConfig.enabledByDefault !== false;
-    dom.labelToggleText.textContent = `Show ${labelConfig.label || "Lot Number"} labels`;
-    state.labelLayer.setMinimumZoom(numberOr(labelConfig.minimumZoom, 17));
+    dom.labelToggle.checked = config.enabledByDefault !== false;
+    dom.labelToggleText.textContent = `Show ${config.label || "Lot Number"} labels`;
+    state.labelLayer.setMinimumZoom(numberOr(config.minimumZoom, 17));
     state.labelLayer.setEnabled(dom.labelToggle.checked);
   }
 
@@ -492,18 +532,20 @@
     const params = new URLSearchParams(window.location.search);
     const requested = params.get("taxonomy");
     const allowed = state.profile.taxonomyOptions || [state.profile.taxonomy];
-    return requested && allowed.includes(requested) ? requested : state.profile.taxonomy;
+    return requested && allowed.includes(requested)
+      ? requested
+      : state.profile.taxonomy;
   }
 
   function activateTaxonomy(taxonomyId) {
-    const taxonomyDefinition = state.taxonomies[taxonomyId];
-    if (!taxonomyDefinition) {
-      throw new Error(`Unknown taxonomy: ${taxonomyId}`);
-    }
+    const definition = state.taxonomies[taxonomyId];
+    if (!definition) throw new Error(`Unknown taxonomy: ${taxonomyId}`);
 
     state.taxonomyId = taxonomyId;
-    state.taxonomy = resolveTaxonomy(taxonomyDefinition);
-    state.activeCategoryKeys = new Set(state.taxonomy.categories.map((category) => category.key));
+    state.taxonomy = resolveTaxonomy(definition);
+    state.activeCategoryKeys = new Set(
+      state.taxonomy.categories.map((category) => category.key)
+    );
     dom.taxonomySwitcher.value = taxonomyId;
     dom.legendTitle.textContent = `Map Key — ${state.taxonomy.label}`;
   }
@@ -529,8 +571,8 @@
         configured: true,
         showWhenZero: Boolean(definition.showZeroCountConfiguredClasses)
       };
-      categories.push(category);
 
+      categories.push(category);
       const accepted = [item.value, ...(item.aliases || [])];
       for (const value of accepted) {
         categoryByNormalized.set(normalize(value), category);
@@ -539,6 +581,7 @@
 
     if (definition.includeObservedValues !== false) {
       const unmatched = new Map();
+
       for (const record of state.records) {
         const value = getFieldValue(record.properties, definition.field);
         if (isBlank(value)) continue;
@@ -548,7 +591,7 @@
         }
       }
 
-      const palette = definition.autoPalette || ["#457b9d", "#2a9d8f", "#e76f51", "#8e6caa", "#6a994e"];
+      const palette = definition.autoPalette || AUTO_PALETTE;
       [...unmatched.entries()]
         .sort((a, b) => naturalCompare(a[1], b[1]))
         .forEach(([normalized, display], index) => {
@@ -646,13 +689,15 @@
 
   function classifyRecord(record) {
     const raw = getFieldValue(record.properties, state.taxonomy.field);
+
     if (state.taxonomy.type === "range") {
       const numeric = toNumber(raw);
       if (numeric === null) return state.taxonomy.fallback;
+
       return state.taxonomy.categories.find((category) => {
         if (category.fallback) return false;
-        const passesMin = category.min === null || category.min === undefined || numeric >= category.min;
-        const passesMax = category.max === null || category.max === undefined || numeric <= category.max;
+        const passesMin = category.min == null || numeric >= category.min;
+        const passesMax = category.max == null || numeric <= category.max;
         return passesMin && passesMax;
       }) || state.taxonomy.fallback;
     }
@@ -660,11 +705,15 @@
     if (state.taxonomy.type === "date-range") {
       const date = parseDateValue(raw);
       if (!date) return state.taxonomy.fallback;
-      const ageDays = Math.max(0, Math.floor((Date.now() - date.getTime()) / 86400000));
+      const ageDays = Math.max(
+        0,
+        Math.floor((Date.now() - date.getTime()) / 86400000)
+      );
+
       return state.taxonomy.categories.find((category) => {
         if (category.fallback) return false;
-        const passesMin = category.minAgeDays === null || category.minAgeDays === undefined || ageDays >= category.minAgeDays;
-        const passesMax = category.maxAgeDays === null || category.maxAgeDays === undefined || ageDays <= category.maxAgeDays;
+        const passesMin = category.minAgeDays == null || ageDays >= category.minAgeDays;
+        const passesMax = category.maxAgeDays == null || ageDays <= category.maxAgeDays;
         return passesMin && passesMax;
       }) || state.taxonomy.fallback;
     }
@@ -676,7 +725,9 @@
   function refreshMap(options = {}) {
     if (!state.map || !state.taxonomy) return;
 
-    const counts = new Map(state.taxonomy.categories.map((category) => [category.key, 0]));
+    const counts = new Map(
+      state.taxonomy.categories.map((category) => [category.key, 0])
+    );
     const visibleLabelItems = [];
     let baseVisibleCount = 0;
     let finalVisibleCount = 0;
@@ -690,13 +741,16 @@
         counts.set(category.key, (counts.get(category.key) || 0) + 1);
       }
 
-      const categoryVisible = state.activeCategoryKeys.has(category.key);
-      const visible = passesFilters && categoryVisible;
+      const visible = passesFilters && state.activeCategoryKeys.has(category.key);
       if (visible) {
         finalVisibleCount += 1;
-        const labelText = getFieldValue(record.properties, state.profile.labels?.field || "lotNumber");
+
+        const labelField = state.profile.labels?.field || "lotNumber";
+        const labelText = getFieldValue(record.properties, labelField);
         const showLabelValue = getFieldValue(record.properties, "showLabel");
-        const labelAllowed = isBlank(showLabelValue) || !["false", "0", "no"].includes(normalize(showLabelValue));
+        const labelAllowed = isBlank(showLabelValue) ||
+          !["false", "0", "no"].includes(normalize(showLabelValue));
+
         if (labelAllowed && !isBlank(labelText) && record.center) {
           visibleLabelItems.push({
             id: record.id,
@@ -739,20 +793,22 @@
 
       if (Array.isArray(definition.searchFields) && definition.searchFields.length) {
         const matchesAny = definition.searchFields.some((searchFieldId) =>
-          normalize(getFieldValue(record.properties, searchFieldId)).includes(normalize(selectedValue))
+          normalize(getFieldValue(record.properties, searchFieldId)).includes(
+            normalize(selectedValue)
+          )
         );
         if (!matchesAny) return false;
         continue;
       }
 
       const fieldValue = getFieldValue(record.properties, fieldId);
-
       if (isSearch) {
         if (!normalize(fieldValue).includes(normalize(selectedValue))) return false;
       } else if (normalize(fieldValue) !== normalize(selectedValue)) {
         return false;
       }
     }
+
     return true;
   }
 
@@ -760,9 +816,7 @@
     const visual = state.visualByFeature.get(feature);
     const style = state.profile.style || {};
 
-    if (!visual?.visible) {
-      return { visible: false };
-    }
+    if (!visual?.visible) return { visible: false };
 
     return {
       visible: true,
@@ -777,14 +831,15 @@
   }
 
   function renderLegend(counts) {
-    const legendConfig = state.profile.legend || {};
-    if (legendConfig.visible === false) {
+    const config = state.profile.legend || {};
+
+    if (config.visible === false) {
       dom.legendSection.hidden = true;
       return;
     }
 
     dom.legendSection.hidden = false;
-    dom.legendHelp.hidden = !(legendConfig.interactive && legendConfig.showHelp);
+    dom.legendHelp.hidden = !(config.interactive && config.showHelp);
     dom.legend.replaceChildren();
 
     const categoriesToShow = state.taxonomy.categories.filter((category) => {
@@ -794,12 +849,16 @@
 
     for (const category of categoriesToShow) {
       const count = counts.get(category.key) || 0;
-      const row = document.createElement(legendConfig.interactive ? "button" : "div");
+      const row = document.createElement(config.interactive ? "button" : "div");
       row.className = "legend-row";
-      if (legendConfig.interactive) {
+
+      if (config.interactive) {
         row.type = "button";
         row.classList.add("is-interactive");
-        row.setAttribute("aria-pressed", String(state.activeCategoryKeys.has(category.key)));
+        row.setAttribute(
+          "aria-pressed",
+          String(state.activeCategoryKeys.has(category.key))
+        );
         row.title = `Toggle ${category.label}`;
         row.addEventListener("click", (event) => {
           if (event.shiftKey) {
@@ -828,25 +887,29 @@
 
       const countElement = document.createElement("span");
       countElement.className = "legend-count";
-      countElement.textContent = legendConfig.showCounts === false ? "" : String(count);
+      countElement.textContent = config.showCounts === false ? "" : String(count);
 
       row.append(swatch, label, countElement);
       dom.legend.appendChild(row);
     }
 
-    const allShown = state.taxonomy.categories.every((category) => state.activeCategoryKeys.has(category.key));
-    dom.legendReset.hidden = allShown || !legendConfig.interactive;
+    const allShown = state.taxonomy.categories.every((category) =>
+      state.activeCategoryKeys.has(category.key)
+    );
+    dom.legendReset.hidden = allShown || !config.interactive;
   }
 
   function activateAllCategories() {
-    state.activeCategoryKeys = new Set(state.taxonomy.categories.map((category) => category.key));
+    state.activeCategoryKeys = new Set(
+      state.taxonomy.categories.map((category) => category.key)
+    );
   }
 
   function updateLabels(items) {
     const config = state.profile.labels || {};
-    const max = numberOr(config.maximumLabels, 1200);
+    const maximum = numberOr(config.maximumLabels, 1200);
     state.labelLayer.setEnabled(Boolean(config.toggleVisible && dom.labelToggle.checked));
-    state.labelLayer.setItems(items.slice(0, max));
+    state.labelLayer.setItems(items.slice(0, maximum));
   }
 
   function updateFeatureStatus(visibleCount, baseVisibleCount) {
@@ -854,46 +917,34 @@
     let text = `${visibleCount.toLocaleString()} of ${total.toLocaleString()} map features visible.`;
 
     if (baseVisibleCount !== visibleCount) {
-      text += ` ${baseVisibleCount.toLocaleString()} match the property filters before map-key selections.`;
+      text += ` ${baseVisibleCount.toLocaleString()} match the current filters.`;
     }
+
     dom.featureStatus.textContent = text;
 
     const details = [];
-    const publishedAt =
-      state.metadata.publishedAt ||
-      state.metadata.published_at ||
-      state.metadata.generatedAt ||
-      state.metadata.generated_at;
-    if (publishedAt) {
-      const formatted = formatDateTime(publishedAt);
-      if (formatted) details.push(`Data published ${formatted}.`);
-    }
-
-    const missingGeometry = numberOrNull(
-      state.metadata.missingGeometryCount ??
-      state.metadata.missing_geometry_count ??
-      state.metadata.crmRecordsWithoutGeometry ??
-      state.metadata.crm_records_without_geometry ??
-      state.metadata.skipped_count ??
-      state.metadata.detectedMissingGeometry
+    const missingGeometry = firstFiniteNumber(
+      state.metadata.detectedMissingGeometry,
+      state.metadata.missingGeometryCount,
+      state.metadata.missing_geometry_count
     );
-    if (missingGeometry && missingGeometry > 0) {
-      details.push(`${missingGeometry.toLocaleString()} source records lack polygon geometry.`);
-    }
-
-    const retained = numberOrNull(
-      state.metadata.retainedUnassignedCount ??
-      state.metadata.retained_unassigned_count ??
-      state.metadata.acceptedUnassignedCount ??
-      state.metadata.accepted_unassigned_count ??
-      state.metadata.unassignedMasterFaceCount ??
+    const retainedUnassigned = firstFiniteNumber(
+      state.metadata.retainedUnassignedCount,
+      state.metadata.retained_unassigned_count,
+      state.metadata.acceptedUnassignedCount,
+      state.metadata.accepted_unassigned_count,
+      state.metadata.unassignedMasterFaceCount,
       state.metadata.unassigned_master_face_count
     );
-    if (retained && retained > 0) {
-      details.push(`${retained.toLocaleString()} unassigned parcel faces retained.`);
-    }
 
+    if (missingGeometry > 0) {
+      details.push(`${missingGeometry.toLocaleString()} records lack geometry.`);
+    }
+    if (retainedUnassigned > 0) {
+      details.push(`${retainedUnassigned.toLocaleString()} unassigned parcel faces retained.`);
+    }
     if (state.metadata.note) details.push(String(state.metadata.note));
+
     dom.dataStatus.textContent = details.join(" ");
   }
 
@@ -902,16 +953,19 @@
       control.value = "";
       state.filterState[fieldId] = "";
     }
+
     activateAllCategories();
+
     if (state.profile.labels?.toggleVisible) {
       dom.labelToggle.checked = state.profile.labels.enabledByDefault !== false;
     }
+
     refreshMap();
   }
 
   function openFeaturePopup(feature, position) {
     const record = state.recordByFeature.get(feature);
-    if (!record || !record.hasPublicContent) return;
+    if (!record?.hasPublicContent) return;
 
     state.selectedFeature = feature;
     state.infoWindow.setContent(buildPopupContent(record));
@@ -987,22 +1041,21 @@
 
     const grid = document.createElement("dl");
     grid.className = "ham-popup-grid";
-
     const actions = [];
     let imageUrl = "";
 
-    for (const fieldConfigRaw of state.profile.popupFields || []) {
-      const fieldConfig = typeof fieldConfigRaw === "string"
-        ? { field: fieldConfigRaw }
-        : fieldConfigRaw;
-      const fieldId = fieldConfig.field;
+    for (const rawConfig of state.profile.popupFields || []) {
+      const config = typeof rawConfig === "string"
+        ? { field: rawConfig }
+        : rawConfig;
+      const fieldId = config.field;
       const definition = state.fields[fieldId];
       if (!definition) continue;
 
       const value = getFieldValue(record.properties, fieldId);
       if (isBlank(value)) continue;
 
-      const format = fieldConfig.format || definition.format;
+      const format = config.format || definition.format;
 
       if (format === "image") {
         if (isSafeHttpUrl(value)) imageUrl = String(value);
@@ -1013,7 +1066,7 @@
         if (isSafeHttpUrl(value)) {
           actions.push({
             href: String(value),
-            label: fieldConfig.buttonLabel || definition.buttonLabel || `Open ${definition.label}`
+            label: config.buttonLabel || definition.buttonLabel || `Open ${definition.label}`
           });
         }
         continue;
@@ -1026,7 +1079,7 @@
 
       const label = document.createElement("dt");
       label.className = "ham-popup-label";
-      label.textContent = fieldConfig.label || definition.label || fieldId;
+      label.textContent = config.label || definition.label || fieldId;
 
       const output = document.createElement("dd");
       output.className = "ham-popup-value";
@@ -1036,92 +1089,123 @@
       grid.appendChild(row);
     }
 
-    if (grid.childElementCount) {
-      root.appendChild(grid);
-    }
-
-    if (actions.length) {
-      const actionRow = document.createElement("div");
-      actionRow.className = "ham-popup-actions";
-
-      for (const action of actions) {
-        const anchor = document.createElement("a");
-        anchor.className = "ham-popup-action";
-        anchor.href = action.href;
-        anchor.target = "_blank";
-        anchor.rel = "noopener noreferrer";
-        anchor.textContent = action.label;
-        actionRow.appendChild(anchor);
-      }
-
-      root.appendChild(actionRow);
-    }
-
     if (imageUrl) {
-      const link = document.createElement("a");
-      link.className = "ham-popup-image-link";
-      link.href = imageUrl;
-      link.target = "_blank";
-      link.rel = "noopener noreferrer";
-      link.title = "Open full-size property image";
-
       const image = document.createElement("img");
       image.className = "ham-popup-image";
       image.src = imageUrl;
-      image.alt = lotNumber ? `Property image for lot ${lotNumber}` : "Property image";
+      image.alt = propertyName ? String(propertyName) : "Property image";
       image.loading = "lazy";
-      image.referrerPolicy = "no-referrer";
-      image.addEventListener("error", () => link.remove());
+      root.appendChild(image);
+    }
 
-      link.appendChild(image);
-      root.appendChild(link);
+    if (grid.childElementCount) root.appendChild(grid);
+
+    if (actions.length) {
+      const actionWrap = document.createElement("div");
+      actionWrap.className = "ham-popup-actions";
+
+      for (const action of actions) {
+        const link = document.createElement("a");
+        link.className = "ham-popup-action";
+        link.href = action.href;
+        link.target = "_blank";
+        link.rel = "noopener noreferrer";
+        link.textContent = action.label;
+        actionWrap.appendChild(link);
+      }
+
+      root.appendChild(actionWrap);
     }
 
     return root;
   }
 
-  function appendFormattedValue(container, value, format) {
+  function appendFormattedValue(element, value, format) {
     if (format === "currency") {
-      const numeric = toNumber(value);
-      container.textContent = numeric === null
-        ? String(value ?? "")
+      const number = toNumber(value);
+      element.textContent = number === null
+        ? String(value)
         : new Intl.NumberFormat("en-US", {
             style: "currency",
             currency: "USD",
             maximumFractionDigits: 0
-          }).format(numeric);
+          }).format(number);
       return;
     }
 
     if (format === "squareFeet") {
-      const numeric = toNumber(value);
-      container.textContent = numeric === null
-        ? String(value ?? "")
-        : `${new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 }).format(numeric)} sq. ft.`;
+      const number = toNumber(value);
+      element.textContent = number === null
+        ? String(value)
+        : `${new Intl.NumberFormat("en-US", {
+            maximumFractionDigits: 0
+          }).format(number)} sq ft`;
       return;
     }
 
     if (format === "date") {
-      const date = parseDateValue(value);
-      container.textContent = date
-        ? new Intl.DateTimeFormat("en-US", {
-            year: "numeric",
-            month: "short",
-            day: "numeric"
-          }).format(date)
-        : String(value ?? "");
+      element.textContent = formatDateTime(value) || String(value);
       return;
     }
 
-    container.textContent = isBlank(value) ? "—" : String(value);
+    element.textContent = String(value);
   }
 
-  function fitInitialViewport() {
-    const mapConfig = state.profile.map || {};
-    if (mapConfig.fitToData === false) return;
+  function hasPublicPopupContent(properties) {
+    return (state.profile.popupFields || []).some((rawConfig) => {
+      const config = typeof rawConfig === "string"
+        ? { field: rawConfig }
+        : rawConfig;
+      return !isBlank(getFieldValue(properties, config.field));
+    });
+  }
+
+  function getFieldValue(properties, fieldId) {
+    const definition = state.fields[fieldId];
+    if (!definition) return properties[fieldId];
+
+    const keys = [fieldId, ...(definition.keys || [])];
+    for (const key of keys) {
+      if (Object.prototype.hasOwnProperty.call(properties, key) && !isBlank(properties[key])) {
+        return properties[key];
+      }
+    }
+
+    return "";
+  }
+
+  function getPreferredLabelPoint(properties) {
+    const latitude = toNumber(getFieldValue(properties, "labelLatitude"));
+    const longitude = toNumber(getFieldValue(properties, "labelLongitude"));
+
+    if (latitude === null || longitude === null) return null;
+    if (Math.abs(latitude) > 90 || Math.abs(longitude) > 180) return null;
+
+    return new google.maps.LatLng(latitude, longitude);
+  }
+
+  function getFeatureCenter(feature) {
+    const geometry = feature.getGeometry();
+    if (!geometry) return null;
 
     const bounds = new google.maps.LatLngBounds();
     let hasPoint = false;
+
+    geometry.forEachLatLng((latLng) => {
+      bounds.extend(latLng);
+      hasPoint = true;
+    });
+
+    return hasPoint ? bounds.getCenter() : null;
+  }
+
+  function fitInitialViewport() {
+    const config = state.profile.map || {};
+    if (config.fitToData === false) return;
+
+    const bounds = new google.maps.LatLngBounds();
+    let hasPoint = false;
+
     for (const record of state.records) {
       record.feature.getGeometry()?.forEachLatLng((latLng) => {
         bounds.extend(latLng);
@@ -1130,9 +1214,10 @@
     }
 
     if (!hasPoint) return;
-    state.map.fitBounds(bounds, numberOr(mapConfig.fitPadding, 34));
 
-    const maxInitialZoom = numberOrNull(mapConfig.maxInitialZoom);
+    state.map.fitBounds(bounds, numberOr(config.fitPadding, 34));
+    const maxInitialZoom = numberOrNull(config.maxInitialZoom);
+
     if (maxInitialZoom !== null) {
       google.maps.event.addListenerOnce(state.map, "idle", () => {
         if (state.map.getZoom() > maxInitialZoom) {
@@ -1150,7 +1235,9 @@
       if (!value) continue;
 
       if (control.tagName === "SELECT") {
-        const match = [...control.options].find((option) => normalize(option.value) === normalize(value));
+        const match = [...control.options].find(
+          (option) => normalize(option.value) === normalize(value)
+        );
         if (match) {
           control.value = match.value;
           state.filterState[fieldId] = match.value;
@@ -1194,89 +1281,51 @@
     window.history.replaceState(null, "", nextUrl);
   }
 
-  function getFieldValue(properties, fieldId) {
-    const definition = state.fields[fieldId];
-    if (!definition) return properties?.[fieldId];
-
-    const keys = definition.keys || [fieldId];
-    for (const key of keys) {
-      if (Object.prototype.hasOwnProperty.call(properties, key) && !isBlank(properties[key])) {
-        return properties[key];
-      }
-    }
-
-    for (const key of keys) {
-      if (Object.prototype.hasOwnProperty.call(properties, key)) return properties[key];
-    }
-    return undefined;
-  }
-
-  function getPreferredLabelPoint(properties) {
-    const latitude = toNumber(getFieldValue(properties, "labelLatitude"));
-    const longitude = toNumber(getFieldValue(properties, "labelLongitude"));
-    if (latitude === null || longitude === null) return null;
-    if (latitude < -90 || latitude > 90 || longitude < -180 || longitude > 180) return null;
-    return new google.maps.LatLng(latitude, longitude);
-  }
-
-  function getFeatureCenter(feature) {
-    const geometry = feature.getGeometry();
-    if (!geometry) return null;
-    const bounds = new google.maps.LatLngBounds();
-    let hasPoint = false;
-    geometry.forEachLatLng((latLng) => {
-      bounds.extend(latLng);
-      hasPoint = true;
-    });
-    return hasPoint ? bounds.getCenter() : null;
-  }
-
   function createLotLabelLayer(map) {
     class LotLabelLayer extends google.maps.OverlayView {
-      constructor(targetMap) {
+      constructor(currentMap) {
         super();
-        this.container = null;
-        this.items = [];
-        this.elements = new Map();
         this.enabled = true;
         this.minimumZoom = 17;
-        this.setMap(targetMap);
+        this.items = [];
+        this.elements = new Map();
+        this.container = null;
+        this.setMap(currentMap);
       }
 
       onAdd() {
         this.container = document.createElement("div");
         this.container.className = "ham-lot-label-layer";
-        this.getPanes().overlayLayer.appendChild(this.container);
+        this.getPanes().overlayMouseTarget.appendChild(this.container);
         this.syncElements();
-        this.draw();
       }
 
       onRemove() {
-        this.elements.clear();
         this.container?.remove();
         this.container = null;
+        this.elements.clear();
+      }
+
+      setEnabled(value) {
+        this.enabled = Boolean(value);
+        this.draw();
+      }
+
+      setMinimumZoom(value) {
+        this.minimumZoom = numberOr(value, 17);
+        this.draw();
       }
 
       setItems(items) {
-        this.items = items || [];
+        this.items = Array.isArray(items) ? items : [];
         this.syncElements();
-        this.draw();
-      }
-
-      setEnabled(enabled) {
-        this.enabled = Boolean(enabled);
-        this.draw();
-      }
-
-      setMinimumZoom(zoom) {
-        this.minimumZoom = zoom;
         this.draw();
       }
 
       syncElements() {
         if (!this.container) return;
-        const currentIds = new Set(this.items.map((item) => item.id));
 
+        const currentIds = new Set(this.items.map((item) => item.id));
         for (const [id, element] of this.elements.entries()) {
           if (!currentIds.has(id)) {
             element.remove();
@@ -1298,8 +1347,14 @@
 
       draw() {
         if (!this.container) return;
+
         const currentMap = this.getMap();
-        const shouldShow = this.enabled && currentMap && currentMap.getZoom() >= this.minimumZoom;
+        const shouldShow = Boolean(
+          this.enabled &&
+          currentMap &&
+          currentMap.getZoom() >= this.minimumZoom
+        );
+
         this.container.style.display = shouldShow ? "block" : "none";
         if (!shouldShow) return;
 
@@ -1328,7 +1383,9 @@
       setTaxonomy: (taxonomyId) => {
         const allowed = state.profile.taxonomyOptions || [state.profile.taxonomy];
         if (!allowed.includes(taxonomyId)) {
-          throw new Error(`Taxonomy '${taxonomyId}' is not allowed by profile '${state.profileId}'.`);
+          throw new Error(
+            `Taxonomy '${taxonomyId}' is not allowed by profile '${state.profileId}'.`
+          );
         }
         activateTaxonomy(taxonomyId);
         refreshMap();
@@ -1344,6 +1401,7 @@
       dom.loadingOverlay.hidden = true;
       return;
     }
+
     dom.loadingMessage.textContent = message;
     dom.loadingOverlay.hidden = false;
   }
@@ -1351,62 +1409,28 @@
   function showError(error) {
     console.error(error);
     setLoading(null);
-    dom.app.setAttribute("aria-busy", "false");
+    dom.app?.setAttribute("aria-busy", "false");
     dom.errorMessage.textContent = error?.message || "An unexpected error occurred.";
+
     const details = error?.stack || "";
     if (details) {
       dom.errorDetails.textContent = details;
       dom.errorDetailsWrap.hidden = false;
     }
+
     dom.errorPanel.hidden = false;
   }
 
-  function hasPublicPopupContent(properties) {
-    const approvedFields = [
-      "propertyName",
-      "lotNumber",
-      "dmpNumber",
-      "lotStatus",
-      "platDimensions",
-      "propertyType",
-      "squareFootageHeated",
-      "stage",
-      "listingStatus",
-      "amount",
-      "updated",
-      "neighborhoodZoning",
-      "neighborhoodDistrict",
-      "architect",
-      "builder",
-      "planName",
-      "arbFolderLink",
-      "photoArchiveLink",
-      "imageUrl"
-    ];
-
-    return approvedFields.some((fieldId) => !isBlank(getFieldValue(properties, fieldId)));
-  }
-
   function parseDateValue(value) {
-    if (value instanceof Date && !Number.isNaN(value.getTime())) return value;
     if (isBlank(value)) return null;
-
-    const raw = String(value).trim();
-    const direct = new Date(raw);
-    if (!Number.isNaN(direct.getTime())) return direct;
-
-    const match = raw.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})(?:\s+.*)?$/);
-    if (match) {
-      const parsed = new Date(Number(match[3]), Number(match[1]) - 1, Number(match[2]));
-      return Number.isNaN(parsed.getTime()) ? null : parsed;
-    }
-
-    return null;
+    const date = new Date(value);
+    return Number.isNaN(date.getTime()) ? null : date;
   }
 
   function formatDateTime(value) {
     const date = new Date(value);
     if (Number.isNaN(date.getTime())) return "";
+
     return new Intl.DateTimeFormat("en-US", {
       year: "numeric",
       month: "short",
@@ -1425,7 +1449,10 @@
   }
 
   function naturalCompare(a, b) {
-    return String(a).localeCompare(String(b), undefined, { numeric: true, sensitivity: "base" });
+    return String(a).localeCompare(String(b), undefined, {
+      numeric: true,
+      sensitivity: "base"
+    });
   }
 
   function toNumber(value) {
@@ -1434,6 +1461,14 @@
     const cleaned = String(value).replace(/[^0-9.-]/g, "");
     const parsed = Number(cleaned);
     return Number.isFinite(parsed) ? parsed : null;
+  }
+
+  function firstFiniteNumber(...values) {
+    for (const value of values) {
+      const number = Number(value);
+      if (Number.isFinite(number)) return number;
+    }
+    return 0;
   }
 
   function numberOr(value, fallback) {
