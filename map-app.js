@@ -40,7 +40,7 @@
     try {
       validateConfiguration();
       resolveProfile();
-      applyProfileText();
+      lyProfileText();
       setLoading("Loading map data…");
 
       const [payload] = await Promise.all([
@@ -58,14 +58,14 @@
       renderFilters();
       configureLabels();
       activateTaxonomy(getRequestedTaxonomyId());
-      applyUrlState();
+      lyUrlState();
       refreshMap({ updateUrl: false });
       fitInitialViewport();
 
       setLoading(null);
-      dom.app.setAttribute("aria-busy", "false");
+      dom..setAttribute("aria-busy", "false");
       exposePublicApi();
-      debug("Application ready", { version: APP_VERSION, profile: state.profileId });
+      debug("lication ready", { version: APP_VERSION, profile: state.profileId });
     } catch (error) {
       showError(error);
     }
@@ -1322,6 +1322,7 @@
   function exposePublicApi() {
     window.HabershamMap = Object.freeze({
       version: APP_VERSION,
+      getMap: () => state.map,
       getProfile: () => state.profileId,
       getTaxonomy: () => state.taxonomyId,
       setTaxonomy: (taxonomyId) => {
