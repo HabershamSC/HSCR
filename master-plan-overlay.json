@@ -1,0 +1,31 @@
+{
+  "schema_version": "2.0",
+  "id": "master-plan-2025",
+  "label": "2025 Master Plan",
+  "enabled": true,
+  "default_visible": false,
+  "image_url": "./master-plan-2025.webp",
+  "bounds": {
+    "north": 32.43513245,
+    "south": 32.41387588,
+    "east": -80.75937974,
+    "west": -80.78800857
+  },
+  "opacity": 0.94,
+  "underlay_map_type": "satellite",
+  "source_pdf_url": "https://static1.squarespace.com/static/5bfc86cb5417fcf91fc8a288/t/6a567dfd9f571362e9275d54/1784053245863/2025_Master_Plan_Canvas_converted.pdf",
+  "georeference": {
+    "method": "sitewide-cad-edge-registration-affine-raster-warp",
+    "reference_geometry": "Habersham_Geolocated_Parcel_CAD.geojson",
+    "transform": {
+      "rotation_degrees": -0.149818258,
+      "scale_x": 1.00154841,
+      "scale_y": 1.00380199,
+      "shear_x": -0.001031556,
+      "source_pixel_translation_x": -5.401648,
+      "source_pixel_translation_y": 4.738157
+    },
+    "status": "production-candidate-sitewide-registered",
+    "note": "Raster pixels are pre-warped. Browser calibration must remain neutral."
+  }
+}
