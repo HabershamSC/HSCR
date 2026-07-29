@@ -1,29 +1,23 @@
-# HSCR Master Plan Production Replacement v7
+# HSCR Master Plan Hybrid Patch v8
 
-Upload the following five files to the root of the HSCR GitHub repository and overwrite the existing files:
+Upload the contents of this folder to the root of the HSCR GitHub repository.
+Preserve the `patches` subfolder.
 
+## Replace
 - `index.html`
-- `map-app.js`
 - `master-plan-layer.js`
 - `master-plan-overlay.json`
+
+## Add
+- `patches/south-park.webp`
+- `patches/somerset.webp`
+
+## Optional full overwrite files included
+- `map-app.js`
 - `master-plan-2025.webp`
 
-## What changed
+The optional files are unchanged from v7 and are included so the package can be used as a complete replacement set.
 
-The Master Plan raster has been pre-warped against the current authoritative CAD parcel geometry across the full mapped site. The browser no longer applies rotation, translation, shear, or scale calibration. `master-plan-layer.js` uses a standard Google Maps `GroundOverlay` with the existing geographic bounds.
+After committing, wait for GitHub Pages deployment, then hard-refresh the site. The cache token is `20260729-8`.
 
-The corrected raster uses a sitewide affine registration derived from parcel-boundary edge correspondence. This avoids the inconsistent results produced by the prior CSS-rotated overlay.
-
-## Deployment
-
-1. Upload all five files together.
-2. Commit directly to `main`.
-3. Wait for the GitHub Pages deployment to complete.
-4. Open the site in an Incognito window.
-5. Hard refresh with Ctrl+Shift+R on Windows or Command+Shift+R on macOS.
-
-The cache token in `index.html` is `20260729-7`.
-
-## Rollback
-
-Keep the prior v6 ZIP until visual QA is complete. To roll back, restore the five v6 files together.
+The correction overlays use feathered edges and are displayed only while the 2025 Master Plan base layer is active.
