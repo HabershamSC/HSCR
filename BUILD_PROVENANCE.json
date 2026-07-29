@@ -1,0 +1,17 @@
+{
+  "package": "HSCR Master Plan Zero Adjustment v9",
+  "build_date": "2026-07-29",
+  "source_pdf": "source/2025_Master_Plan_Canvas_converted.pdf",
+  "source_page": 1,
+  "render": {
+    "dpi": 240,
+    "pixel_dimensions": [6180, 5400],
+    "crop": false,
+    "rotation_degrees": 0,
+    "resize_after_render": false,
+    "warp": false,
+    "shear": false,
+    "translation": false
+  },
+  "browser_overlay": "google.maps.GroundOverlay"
+}

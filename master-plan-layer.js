@@ -1,7 +1,7 @@
 (() => {
   "use strict";
 
-  const LAYER_SCRIPT_VERSION = "1.0.0";
+  const LAYER_SCRIPT_VERSION = "9.0.0-zero-adjustment";
   const DEFAULT_CONFIG_URL = "./master-plan-overlay.json";
   const READY_TIMEOUT_MS = 30000;
   const READY_POLL_MS = 50;
