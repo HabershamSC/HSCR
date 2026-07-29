@@ -1,5 +1,5 @@
 {
-  "schema_version": "3.0",
+  "schema_version": "1.0",
   "id": "master-plan-2025",
   "label": "2025 Master Plan",
   "enabled": true,
@@ -13,24 +13,11 @@
   },
   "opacity": 0.94,
   "underlay_map_type": "satellite",
-  "source": {
-    "file": "./source/2025_Master_Plan_Canvas_converted.pdf",
-    "page": 1,
-    "render_dpi": 240,
-    "render_width_px": 6180,
-    "render_height_px": 5400,
-    "orientation": "north-up"
-  },
-  "geometry_policy": {
-    "rotation_degrees": 0,
-    "scale_x": 1,
-    "scale_y": 1,
-    "shear_x": 0,
-    "shear_y": 0,
-    "translation_x": 0,
-    "translation_y": 0,
-    "perspective": "none",
-    "local_warp": "none",
-    "crop": "none"
+  "source_pdf_url": "https://static1.squarespace.com/static/5bfc86cb5417fcf91fc8a288/t/6a567dfd9f571362e9275d54/1784053245863/2025_Master_Plan_Canvas_converted.pdf",
+  "georeference": {
+    "method": "affine-control-point-fit",
+    "control_area": "St. Phillips Boulevard lots 1-22",
+    "local_fit_median_error_m": 0.79,
+    "status": "provisional-pending-sitewide-qa"
   }
 }
