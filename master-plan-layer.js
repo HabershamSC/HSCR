@@ -1,11 +1,10 @@
 (() => {
   "use strict";
 
-  const LAYER_SCRIPT_VERSION = "1.1.0";
+  const LAYER_SCRIPT_VERSION = "1.0.0";
   const DEFAULT_CONFIG_URL = "./master-plan-overlay.json";
   const READY_TIMEOUT_MS = 30000;
   const READY_POLL_MS = 50;
-  const METERS_PER_DEGREE_LATITUDE = 111320;
 
   document.addEventListener("DOMContentLoaded", () => {
     initializeMasterPlanLayer().catch((error) => {
@@ -35,12 +34,14 @@
     const ensureOverlay = () => {
       if (overlay) return overlay;
 
-      overlay = createRotatableImageOverlay({
-        imageUrl: normalized.imageUrl,
-        bounds: normalized.bounds,
-        opacity: normalized.opacity,
-        calibration: normalized.calibration
-      });
+      overlay = new google.maps.GroundOverlay(
+        normalized.imageUrl,
+        normalized.bounds,
+        {
+          clickable: false,
+          opacity: normalized.opacity
+        }
+      );
 
       return overlay;
     };
@@ -48,14 +49,14 @@
     const setBaseLayer = (layerId, options = {}) => {
       const useMasterPlan = isMasterPlanLayerId(layerId, normalized.id);
 
-      map.setMapTypeId(normalized.underlayMapType);
-
       if (useMasterPlan) {
+        map.setMapTypeId(normalized.underlayMapType);
         ensureOverlay().setMap(map);
         controls.select.value = "master-plan";
         activeLayer = "master-plan";
       } else {
         if (overlay) overlay.setMap(null);
+        map.setMapTypeId(normalized.underlayMapType);
         controls.select.value = "satellite";
         activeLayer = "satellite";
       }
@@ -91,153 +92,14 @@
       version: LAYER_SCRIPT_VERSION,
       getConfig: () => ({ ...config }),
       getBaseLayer: () => activeLayer,
-      getCalibration: () => ({ ...normalized.calibration }),
       setBaseLayer,
       setOpacity: (value) => {
         const opacity = clamp(Number(value), 0, 1);
         normalized.opacity = opacity;
         if (overlay) overlay.setOpacity(opacity);
         return opacity;
-      },
-      setCalibration: (changes) => {
-        normalized.calibration = normalizeCalibration({
-          ...normalized.calibration,
-          ...(changes && typeof changes === "object" ? changes : {})
-        });
-        ensureOverlay().setCalibration(normalized.calibration);
-        return { ...normalized.calibration };
       }
     });
-  }
-
-  function createRotatableImageOverlay(options) {
-    class RotatableImageOverlay extends google.maps.OverlayView {
-      constructor(imageUrl, bounds, overlayOptions) {
-        super();
-        this.imageUrl = imageUrl;
-        this.bounds = { ...bounds };
-        this.opacity = overlayOptions.opacity;
-        this.calibration = { ...overlayOptions.calibration };
-        this.container = null;
-        this.image = null;
-      }
-
-      onAdd() {
-        const container = document.createElement("div");
-        container.className = "master-plan-image-overlay";
-        container.style.position = "absolute";
-        container.style.pointerEvents = "none";
-        container.style.transformOrigin = "50% 50%";
-        container.style.willChange = "transform, left, top, width, height";
-        container.style.opacity = String(this.opacity);
-
-        const image = document.createElement("img");
-        image.src = this.imageUrl;
-        image.alt = "";
-        image.setAttribute("aria-hidden", "true");
-        image.draggable = false;
-        image.style.display = "block";
-        image.style.width = "100%";
-        image.style.height = "100%";
-        image.style.userSelect = "none";
-        image.style.pointerEvents = "none";
-
-        container.appendChild(image);
-        this.container = container;
-        this.image = image;
-
-        const panes = this.getPanes();
-        if (!panes || !panes.mapPane) {
-          throw new Error("Google Maps mapPane is unavailable for the Master Plan overlay.");
-        }
-        panes.mapPane.appendChild(container);
-      }
-
-      draw() {
-        if (!this.container) return;
-
-        const projection = this.getProjection();
-        if (!projection) return;
-
-        const adjusted = calculateCalibratedBounds(this.bounds, this.calibration);
-        const northWest = projection.fromLatLngToDivPixel(
-          new google.maps.LatLng(adjusted.north, adjusted.west)
-        );
-        const southEast = projection.fromLatLngToDivPixel(
-          new google.maps.LatLng(adjusted.south, adjusted.east)
-        );
-
-        if (!northWest || !southEast) return;
-
-        const left = Math.min(northWest.x, southEast.x);
-        const top = Math.min(northWest.y, southEast.y);
-        const width = Math.abs(southEast.x - northWest.x);
-        const height = Math.abs(southEast.y - northWest.y);
-
-        this.container.style.left = `${left}px`;
-        this.container.style.top = `${top}px`;
-        this.container.style.width = `${width}px`;
-        this.container.style.height = `${height}px`;
-        this.container.style.transform = `rotate(${this.calibration.rotation_degrees}deg)`;
-      }
-
-      onRemove() {
-        if (this.container && this.container.parentNode) {
-          this.container.parentNode.removeChild(this.container);
-        }
-        this.container = null;
-        this.image = null;
-      }
-
-      setOpacity(value) {
-        this.opacity = clamp(Number(value), 0, 1);
-        if (this.container) {
-          this.container.style.opacity = String(this.opacity);
-        }
-      }
-
-      setCalibration(calibration) {
-        this.calibration = normalizeCalibration(calibration);
-        this.draw();
-      }
-
-      getCalibration() {
-        return { ...this.calibration };
-      }
-    }
-
-    return new RotatableImageOverlay(
-      options.imageUrl,
-      options.bounds,
-      {
-        opacity: options.opacity,
-        calibration: options.calibration
-      }
-    );
-  }
-
-  function calculateCalibratedBounds(bounds, calibration) {
-    const centerLatitude = (bounds.north + bounds.south) / 2;
-    const centerLongitude = (bounds.east + bounds.west) / 2;
-    const longitudeMetersPerDegree = Math.max(
-      1,
-      METERS_PER_DEGREE_LATITUDE * Math.cos(centerLatitude * Math.PI / 180)
-    );
-
-    const shiftedCenterLatitude = centerLatitude +
-      calibration.offset_north_m / METERS_PER_DEGREE_LATITUDE;
-    const shiftedCenterLongitude = centerLongitude +
-      calibration.offset_east_m / longitudeMetersPerDegree;
-
-    const halfLatitudeSpan = (bounds.north - bounds.south) * calibration.scale_y / 2;
-    const halfLongitudeSpan = (bounds.east - bounds.west) * calibration.scale_x / 2;
-
-    return {
-      north: shiftedCenterLatitude + halfLatitudeSpan,
-      south: shiftedCenterLatitude - halfLatitudeSpan,
-      east: shiftedCenterLongitude + halfLongitudeSpan,
-      west: shiftedCenterLongitude - halfLongitudeSpan
-    };
   }
 
   async function waitForHabershamMapApi() {
@@ -261,7 +123,7 @@
 
   async function loadOverlayConfig() {
     const configuredUrl =
-      (window.HAM_RUNTIME && window.HAM_RUNTIME.masterPlanOverlayConfigUrl) ||
+      window.HAM_RUNTIME?.masterPlanOverlayConfigUrl ||
       DEFAULT_CONFIG_URL;
 
     const url = new URL(configuredUrl, window.location.href);
@@ -280,11 +142,7 @@
       );
     }
 
-    try {
-      return await response.json();
-    } catch (error) {
-      throw new Error(`Master-plan overlay configuration is invalid JSON: ${error.message}`);
-    }
+    return response.json();
   }
 
   function normalizeOverlayConfig(config) {
@@ -311,22 +169,9 @@
       label: String(config.label || "Master Plan"),
       imageUrl: new URL(imageUrl, window.location.href).toString(),
       bounds: { north, south, east, west },
-      calibration: normalizeCalibration(config.calibration),
-      opacity: clamp(Number(config.opacity === undefined ? 1 : config.opacity), 0, 1),
+      opacity: clamp(Number(config.opacity ?? 1), 0, 1),
       defaultVisible: Boolean(config.default_visible),
       underlayMapType: normalizeMapType(config.underlay_map_type)
-    };
-  }
-
-  function normalizeCalibration(calibration) {
-    const value = calibration && typeof calibration === "object" ? calibration : {};
-
-    return {
-      rotation_degrees: finiteNumberOrDefault(value.rotation_degrees, 0),
-      offset_east_m: finiteNumberOrDefault(value.offset_east_m, 0),
-      offset_north_m: finiteNumberOrDefault(value.offset_north_m, 0),
-      scale_x: positiveNumberOrDefault(value.scale_x, 1),
-      scale_y: positiveNumberOrDefault(value.scale_y, 1)
     };
   }
 
@@ -435,16 +280,6 @@
     }
 
     return number;
-  }
-
-  function finiteNumberOrDefault(value, fallback) {
-    const number = Number(value);
-    return Number.isFinite(number) ? number : fallback;
-  }
-
-  function positiveNumberOrDefault(value, fallback) {
-    const number = Number(value);
-    return Number.isFinite(number) && number > 0 ? number : fallback;
   }
 
   function clamp(value, minimum, maximum) {
