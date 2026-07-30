@@ -205,22 +205,49 @@
     }
   }
 
-  async function loadGeoJson() {
-    // 🚀 BYPASS GITHUB PAGES: Force the app to fetch directly from the raw repository
-    // We append the timestamp (?t=Date.now()) to guarantee we bust the browser cache.
-    const rawUrl = `https://raw.githubusercontent.com/habershamsc/HSCR/master/habersham-parcels.geojson?t=${Date.now()}`;
+ async function loadGeoJson(options = {}) {
+  const useFallback = options.useFallback === true;
 
-    const response = await fetch(rawUrl, { cache: "no-store" });
-    if (!response.ok) {
-      throw new Error(`GeoJSON request failed with HTTP ${response.status}: ${rawUrl}`);
-    }
+  const configuredUrl = useFallback
+    ? state.runtime.fallbackDataUrl
+    : state.runtime.liveDataUrl || state.runtime.fallbackDataUrl;
 
-    try {
-      return await response.json();
-    } catch (error) {
-      throw new Error(`The GeoJSON data is not valid JSON: ${error.message}`);
-    }
+  if (!configuredUrl) {
+    throw new Error("No GeoJSON data URL has been configured.");
   }
+
+  const separator = configuredUrl.includes("?") ? "&" : "?";
+  const requestUrl = state.runtime.cacheBustData
+    ? `${configuredUrl}${separator}t=${Date.now()}`
+    : configuredUrl;
+
+  try {
+    const response = await fetch(requestUrl, {
+      method: "GET",
+      cache: "no-store",
+      redirect: "follow"
+    });
+
+    if (!response.ok) {
+      throw new Error(
+        `GeoJSON request failed with HTTP ${response.status}: ${requestUrl}`
+      );
+    }
+
+    return await response.json();
+  } catch (liveError) {
+    if (!useFallback && state.runtime.fallbackDataUrl) {
+      console.warn(
+        "Live GeoJSON failed. Loading GitHub fallback.",
+        liveError
+      );
+
+      return loadGeoJson({ useFallback: true });
+    }
+
+    throw liveError;
+  }
+}
 
   function normalizePayload(payload) {
     if (!payload || typeof payload !== "object") {
