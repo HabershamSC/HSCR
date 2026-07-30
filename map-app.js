@@ -206,19 +206,13 @@
   }
 
   async function loadGeoJson() {
-    const configuredUrl = state.profile.dataUrl || state.runtime.dataUrl;
-    if (!configuredUrl) {
-      throw new Error("No GeoJSON URL is configured in runtime.js or the active profile.");
-    }
+    // 🚀 BYPASS GITHUB PAGES: Force the app to fetch directly from the raw repository
+    // We append the timestamp (?t=Date.now()) to guarantee we bust the browser cache.
+    const rawUrl = `https://raw.githubusercontent.com/habershamsc/HSCR/master/habersham-parcels.geojson?t=${Date.now()}`;
 
-    const url = new URL(configuredUrl, window.location.href);
-    if (state.runtime.cacheBustData) {
-      url.searchParams.set("v", String(Date.now()));
-    }
-
-    const response = await fetch(url.toString(), { cache: "no-store" });
+    const response = await fetch(rawUrl, { cache: "no-store" });
     if (!response.ok) {
-      throw new Error(`GeoJSON request failed with HTTP ${response.status}: ${url.pathname}`);
+      throw new Error(`GeoJSON request failed with HTTP ${response.status}: ${rawUrl}`);
     }
 
     try {
