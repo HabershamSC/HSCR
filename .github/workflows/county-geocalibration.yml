@@ -2,16 +2,12 @@ name: Beaufort County parcel geocalibration
 
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - fix/county-geocalibration
-    paths:
-      - "data/**"
-      - "scripts/**"
-      - ".github/workflows/county-geocalibration.yml"
+
+permissions:
+  contents: read
 
 jobs:
-  geocalibrate:
+  calibrate:
     runs-on: ubuntu-latest
 
     steps:
@@ -24,15 +20,12 @@ jobs:
           python-version: "3.12"
 
       - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install requests numpy pyproj shapely
+        run: pip install -r requirements.txt
 
-      - name: Run county geocalibration
-  run: |
-    python scripts/calibrate_to_beaufort.py
+      - name: Fetch County GIS and calculate transformations
+        run: python scripts/calibrate_to_beaufort.py --faces data/master-parcel-faces.geojson --output output
 
-      - name: Upload calibration results
+      - name: Upload QA package
         uses: actions/upload-artifact@v4
         with:
           name: HSCR-Beaufort-County-Geocalibration
