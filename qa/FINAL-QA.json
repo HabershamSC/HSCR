@@ -1,9 +1,0 @@
-{
-  "faces_total": 839,
-  "county_exact_geometry": 796,
-  "cad_faces_affine_transformed": 43,
-  "compiled_crm_features": 897,
-  "master_plan_webp_modified": false,
-  "pipelinecrm_modified": false,
-  "deployment_branch": "fix/final-geometry"
-}
