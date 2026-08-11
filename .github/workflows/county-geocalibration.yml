@@ -29,8 +29,8 @@ jobs:
           pip install requests numpy pyproj shapely
 
       - name: Run county geocalibration
-        run: |
-          python scripts/county_geocalibrate.py
+  run: |
+    python scripts/calibrate_to_beaufort.py
 
       - name: Upload calibration results
         uses: actions/upload-artifact@v4
