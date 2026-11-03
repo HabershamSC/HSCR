@@ -1,7 +1,7 @@
 (() => {
   "use strict";
 
-  const APP_VERSION = "2.0.1-master-plan";
+  const APP_VERSION = "2.0.2-url-refresh";
   const FALLBACK_COLOR = "#b8b8b8";
   const AUTO_PALETTE = [
     "#457b9d",
@@ -36,7 +36,9 @@
     filterControls: new Map(),
     activeCategoryKeys: new Set(),
     selectedFeature: null,
-    updateTimer: null
+    updateTimer: null,
+    dataRefreshTimer: null,
+    dataRefreshPromise: null
   };
 
   const dom = {};
@@ -76,6 +78,7 @@
       refreshMap({ updateUrl: false });
       fitInitialViewport();
       exposePublicApi();
+      startDataRefresh();
 
       setLoading(null);
       dom.app.setAttribute("aria-busy", "false");
@@ -249,6 +252,129 @@
   }
 }
 
+  // Fetch new data separately from refreshMap(), which only redraws current records.
+  function startDataRefresh() {
+    const interval = Number(state.runtime.refreshIntervalMs);
+    if (!Number.isFinite(interval) || interval <= 0) return;
+    window.clearTimeout(state.dataRefreshTimer);
+    const tick = async () => {
+      try {
+        if (!document.hidden) await reloadPublishedData();
+      } finally {
+        state.dataRefreshTimer = window.setTimeout(tick, Math.max(1000, interval));
+      }
+    };
+    state.dataRefreshTimer = window.setTimeout(tick, Math.max(1000, interval));
+  }
+
+  function reloadPublishedData() {
+    if (state.dataRefreshPromise) return state.dataRefreshPromise;
+    state.dataRefreshPromise = reloadPublishedDataOnce()
+      .catch(error => {
+        console.warn("[HabershamMap] Data refresh failed; previous data retained.", error);
+        return { changed: false, error: error.message || String(error) };
+      })
+      .finally(() => { state.dataRefreshPromise = null; });
+    return state.dataRefreshPromise;
+  }
+
+  async function reloadPublishedDataOnce() {
+    const nextPayload = normalizePayload(await loadGeoJson());
+    // Compare content even when metadata/fingerprints are missing or stale.
+    if (JSON.stringify(nextPayload) === JSON.stringify(state.payload)) {
+      return { changed: false };
+    }
+    const currentTime = Date.parse(state.payload.metadata?.generated_at || "");
+    const nextTime = Date.parse(nextPayload.metadata?.generated_at || "");
+    if (Number.isFinite(currentTime) && Number.isFinite(nextTime) && nextTime < currentTime) {
+      console.warn("[HabershamMap] Older published snapshot ignored.");
+      return { changed: false, stale: true };
+    }
+    const ids = nextPayload.features.map(feature => feature?.id).filter(id => id != null).map(String);
+    if (new Set(ids).size !== ids.length) throw new Error("Updated data contains duplicate feature IDs.");
+    if (!nextPayload.features.length || nextPayload.features.some(feature =>
+      !feature || feature.type !== "Feature" ||
+      !["Polygon", "MultiPolygon"].includes(feature.geometry?.type))) {
+      throw new Error("Updated data must contain valid parcel polygon features.");
+    }
+    // Parse in a detached data layer before touching the displayed map.
+    const staging = new google.maps.Data();
+    const nextFeatures = staging.addGeoJson(nextPayload);
+    if (nextFeatures.length !== nextPayload.features.length) {
+      throw new Error("Updated data contains duplicate or invalid feature IDs.");
+    }
+    const oldPayload = state.payload;
+    const oldMetadata = state.metadata;
+    const oldFeatures = state.features;
+    const selectedId = state.selectedFeature?.getId();
+    const hiddenCategories = new Set(state.taxonomy.categories
+      .filter(category => !state.activeCategoryKeys.has(category.key))
+      .map(category => category.key));
+    try {
+      oldFeatures.forEach(feature => state.map.data.remove(feature));
+      nextFeatures.forEach(feature => {
+        staging.remove(feature);
+        state.map.data.add(feature);
+      });
+      state.payload = nextPayload;
+      state.metadata = { ...(nextPayload.metadata || {}) };
+      state.features = nextFeatures;
+      buildRecordIndex();
+      updateFilterOptions();
+      state.taxonomy = resolveTaxonomy(state.taxonomies[state.taxonomyId]);
+      state.activeCategoryKeys = new Set(state.taxonomy.categories
+        .filter(category => !hiddenCategories.has(category.key)).map(category => category.key));
+      state.selectedFeature = null;
+      refreshMap({ updateUrl: false });
+      const selected = selectedId == null ? null : state.features.find(feature =>
+        String(feature.getId()) === String(selectedId));
+      if (selected && state.visualByFeature.get(selected)?.visible &&
+          state.recordByFeature.get(selected)?.hasPublicContent) {
+        openFeaturePopup(selected);
+      } else {
+        state.infoWindow.close();
+      }
+      return { changed: true, featureCount: state.features.length };
+    } catch (error) {
+      nextFeatures.forEach(feature => state.map.data.remove(feature));
+      oldFeatures.forEach(feature => state.map.data.add(feature));
+      state.payload = oldPayload;
+      state.metadata = oldMetadata;
+      state.features = oldFeatures;
+      buildRecordIndex();
+      updateFilterOptions();
+      state.taxonomy = resolveTaxonomy(state.taxonomies[state.taxonomyId]);
+      state.activeCategoryKeys = new Set(state.taxonomy.categories
+        .filter(category => !hiddenCategories.has(category.key)).map(category => category.key));
+      state.selectedFeature = null;
+      refreshMap({ updateUrl: false });
+      const selected = selectedId == null ? null : oldFeatures.find(feature =>
+        String(feature.getId()) === String(selectedId));
+      if (selected && state.visualByFeature.get(selected)?.visible) openFeaturePopup(selected);
+      else state.infoWindow.close();
+      throw error;
+    }
+  }
+
+  function updateFilterOptions() {
+    // Reuse controls/listeners and retain selections, including values no longer in data.
+    for (const [fieldId, control] of state.filterControls) {
+      if (control.tagName !== "SELECT") continue;
+      const selected = state.filterState[fieldId] || "";
+      const allLabel = control.options[0]?.textContent || "All";
+      const values = getUniqueFieldValues(fieldId);
+      if (selected && !values.includes(selected)) values.push(selected);
+      control.replaceChildren();
+      for (const value of ["", ...values]) {
+        const option = document.createElement("option");
+        option.value = value;
+        option.textContent = value || allLabel;
+        control.appendChild(option);
+      }
+      control.value = selected;
+    }
+  }
+
   function normalizePayload(payload) {
     if (!payload || typeof payload !== "object") {
       throw new Error("The GeoJSON response is empty or invalid.");
@@ -343,6 +469,7 @@
 
     state.map = new google.maps.Map(dom.map, options);
     state.infoWindow = new google.maps.InfoWindow({ maxWidth: 390 });
+    state.infoWindow.addListener("closeclick", () => { state.selectedFeature = null; });
     state.labelLayer = createLotLabelLayer(state.map);
 
     state.map.data.addListener("mouseover", (event) => {
@@ -1413,7 +1540,8 @@
       },
       clearFilters,
       fitToData: fitInitialViewport,
-      refresh: () => refreshMap()
+      refresh: () => refreshMap(),
+      reloadData: () => reloadPublishedData()
     });
   }
 
