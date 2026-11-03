@@ -102,6 +102,7 @@ window.HAM_PROFILES = Object.freeze({
       "webPageUrl",
       "arbFolderLink",
       "photoArchiveLink",
+      "housePlanLibraryUrl",
       "imageUrl"
     ],
     "map": {
@@ -223,6 +224,7 @@ window.HAM_PROFILES = Object.freeze({
       "webPageUrl",
       "arbFolderLink",
       "photoArchiveLink",
+      "housePlanLibraryUrl",
       "imageUrl"
     ],
     "map": {
@@ -344,6 +346,7 @@ window.HAM_PROFILES = Object.freeze({
       "webPageUrl",
       "arbFolderLink",
       "photoArchiveLink",
+      "housePlanLibraryUrl",
       "imageUrl"
     ],
     "map": {
@@ -465,6 +468,7 @@ window.HAM_PROFILES = Object.freeze({
       "webPageUrl",
       "arbFolderLink",
       "photoArchiveLink",
+      "housePlanLibraryUrl",
       "imageUrl"
     ],
     "map": {
@@ -586,6 +590,7 @@ window.HAM_PROFILES = Object.freeze({
       "webPageUrl",
       "arbFolderLink",
       "photoArchiveLink",
+      "housePlanLibraryUrl",
       "imageUrl"
     ],
     "map": {

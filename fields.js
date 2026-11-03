@@ -138,6 +138,13 @@ window.HAM_FIELDS = Object.freeze({
     buttonLabel: "Web Page"
   },
 
+  housePlanLibraryUrl: {
+    label: "Base Plan",
+    keys: ["house_plan_library_url", "housePlanLibraryUrl", "House Plan Library URL"],
+    format: "link",
+    buttonLabel: "Base Plan"
+  },
+
   photoArchiveLink: {
     label: "Photo Archive",
     keys: ["photo_archive_link", "photoArchiveLink", "Photo Archive (Drive)"],
