@@ -131,6 +131,13 @@ window.HAM_FIELDS = Object.freeze({
     buttonLabel: "View ARB Folder"
   },
 
+  webPageUrl: {
+    label: "Web Page",
+    keys: ["web_page_url", "webPageUrl", "Web Page URL"],
+    format: "link",
+    buttonLabel: "Web Page"
+  },
+
   photoArchiveLink: {
     label: "Photo Archive",
     keys: ["photo_archive_link", "photoArchiveLink", "Photo Archive (Drive)"],
