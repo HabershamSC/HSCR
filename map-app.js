@@ -2,6 +2,133 @@
   "use strict";
 
   const APP_VERSION = "2.0.1-master-plan";
+  // Published plan titles/URLs verified against the collection and sitemap on 2026-11-03.
+  // Unknown plan names remain plain text. Refresh this catalogue when library pages change.
+  const PLAN_LIBRARY_URLS = Object.freeze({
+    "lincoln": "https://habershamsc.com/house-plan-library/lincoln",
+    "beaufort": "https://habershamsc.com/house-plan-library/beaufort",
+    "bragg": "https://habershamsc.com/house-plan-library/bragg",
+    "barlow": "https://habershamsc.com/house-plan-library/barlow",
+    "pemberton": "https://habershamsc.com/house-plan-library/pemberton",
+    "primrose": "https://habershamsc.com/house-plan-library/primrose",
+    "beale": "https://habershamsc.com/house-plan-library/beale",
+    "santee ii": "https://habershamsc.com/house-plan-library/santee-2",
+    "tabby cottage": "https://habershamsc.com/house-plan-library/tabby-cottage",
+    "merrita creek": "https://habershamsc.com/house-plan-library/merrita-creek",
+    "conroy": "https://habershamsc.com/house-plan-library/conroy",
+    "brookhaven": "https://habershamsc.com/house-plan-library/brookhaven",
+    "altamaha": "https://habershamsc.com/house-plan-library/altamaha",
+    "saluda river": "https://habershamsc.com/house-plan-library/saluda-river",
+    "morgan": "https://habershamsc.com/house-plan-library/morgan-new",
+    "chowan ii": "https://habershamsc.com/house-plan-library/chowan-2-new",
+    "broad ii": "https://habershamsc.com/house-plan-library/broad-2-new",
+    "branford": "https://habershamsc.com/house-plan-library/branford",
+    "lawton iii": "https://habershamsc.com/house-plan-library/lawton-3",
+    "ashley": "https://habershamsc.com/house-plan-library/ashley",
+    "lawton ii": "https://habershamsc.com/house-plan-library/lawton-2",
+    "kadair": "https://habershamsc.com/house-plan-library/kadair",
+    "lawton": "https://habershamsc.com/house-plan-library/lawton",
+    "broad river cottage": "https://habershamsc.com/house-plan-library/broad-river-cottage",
+    "habersham creek cottage": "https://habershamsc.com/house-plan-library/habersham-creek-cottage",
+    "coastal living house": "https://habershamsc.com/house-plan-library/coastal-living-house",
+    "adaptive cottage": "https://habershamsc.com/house-plan-library/adaptive",
+    "blythewood": "https://habershamsc.com/house-plan-library/blythewood",
+    "abbey": "https://habershamsc.com/house-plan-library/abbey",
+    "archers creek cottage": "https://habershamsc.com/house-plan-library/archers-creek",
+    "clemson": "https://habershamsc.com/house-plan-library/clemson",
+    "fox meadow": "https://habershamsc.com/house-plan-library/fox-meadow",
+    "bull river cottage": "https://habershamsc.com/house-plan-library/bull-river",
+    "ballast creek cottage": "https://habershamsc.com/house-plan-library/ballast-creek",
+    "may river cottage": "https://habershamsc.com/house-plan-library/may-river",
+    "boulevard": "https://habershamsc.com/house-plan-library/boulevard",
+    "grace park": "https://habershamsc.com/house-plan-library/grace-park",
+    "bay street": "https://habershamsc.com/house-plan-library/bay-street",
+    "loudon": "https://habershamsc.com/house-plan-library/loudon",
+    "ramsey": "https://habershamsc.com/house-plan-library/ramsey",
+    "eddings point cottage": "https://habershamsc.com/house-plan-library/eddings-point",
+    "jack island cottage": "https://habershamsc.com/house-plan-library/jack-island",
+    "little barnwell cottage": "https://habershamsc.com/house-plan-library/little-barnwell-cottage",
+    "mulligan creek cottage": "https://habershamsc.com/house-plan-library/mulligan-creek",
+    "ribbon creek cottage": "https://habershamsc.com/house-plan-library/ribbon-creek",
+    "salt marsh cottage": "https://habershamsc.com/house-plan-library/salt-marsh",
+    "sawmill creek cottage": "https://habershamsc.com/house-plan-library/sawmill-creek",
+    "tidal creek cottage": "https://habershamsc.com/house-plan-library/tidal-creek-cottage",
+    "wright river cottage": "https://habershamsc.com/house-plan-library/wright-river",
+    "broad": "https://habershamsc.com/house-plan-library/broad",
+    "bay ridge": "https://habershamsc.com/house-plan-library/bay-ridge",
+    "camden": "https://habershamsc.com/house-plan-library/camden",
+    "okatie": "https://habershamsc.com/house-plan-library/okatie",
+    "canton": "https://habershamsc.com/house-plan-library/canton",
+    "williman ii": "https://habershamsc.com/house-plan-library/williman-2",
+    "edding": "https://habershamsc.com/house-plan-library/edding",
+    "archer": "https://habershamsc.com/house-plan-library/archer",
+    "huspa": "https://habershamsc.com/house-plan-library/huspa",
+    "albergottie": "https://habershamsc.com/house-plan-library/albergottie",
+    "st. helena": "https://habershamsc.com/house-plan-library/st-helena",
+    "craven": "https://habershamsc.com/house-plan-library/craven",
+    "old bethel ii cottage": "https://habershamsc.com/house-plan-library/old-bethel-2",
+    "whitaker": "https://habershamsc.com/house-plan-library/whitaker",
+    "fairfax": "https://habershamsc.com/house-plan-library/fairfax",
+    "rivers park house": "https://habershamsc.com/house-plan-library/rivers-park-house",
+    "river place cottage": "https://habershamsc.com/house-plan-library/river-place-cottage",
+    "ravenel": "https://habershamsc.com/house-plan-library/ravenel",
+    "wagener": "https://habershamsc.com/house-plan-library/wagener",
+    "edwards park house": "https://habershamsc.com/house-plan-library/edwards-park-house",
+    "chesnee": "https://habershamsc.com/house-plan-library/chesnee",
+    "ferman": "https://habershamsc.com/house-plan-library/ferman",
+    "gloverville": "https://habershamsc.com/house-plan-library/gloverville",
+    "holly hill": "https://habershamsc.com/house-plan-library/holly-hill",
+    "bradenton": "https://habershamsc.com/house-plan-library/bradenton",
+    "spartina": "https://habershamsc.com/house-plan-library/spartina",
+    "fairfax ii": "https://habershamsc.com/house-plan-library/fairfax-2",
+    "old bethel cottage": "https://habershamsc.com/house-plan-library/old-bethel-cottage",
+    "camden park house": "https://habershamsc.com/house-plan-library/camden-park-house",
+    "hartsville": "https://habershamsc.com/house-plan-library/hartsville",
+    "sugarberry cottage": "https://habershamsc.com/house-plan-library/sugarberry-cottage",
+    "edisto iii": "https://habershamsc.com/house-plan-library/edisto-3",
+    "laurens": "https://habershamsc.com/house-plan-library/laurens",
+    "calhoun cottage": "https://habershamsc.com/house-plan-library/calhoun-cottage",
+    "landsford": "https://habershamsc.com/house-plan-library/landsford",
+    "islandton": "https://habershamsc.com/house-plan-library/islandton",
+    "elgin": "https://habershamsc.com/house-plan-library/elgin",
+    "eastover cottage": "https://habershamsc.com/house-plan-library/eastover-cottage",
+    "santee cottage": "https://habershamsc.com/house-plan-library/santee-cottage",
+    "sycamore": "https://habershamsc.com/house-plan-library/sycamore",
+    "lyford": "https://habershamsc.com/house-plan-library/lyford",
+    "st. phillips place": "https://habershamsc.com/house-plan-library/st-phillips-place",
+    "oak spring": "https://habershamsc.com/house-plan-library/oak-spring",
+    "pinewood cottage": "https://habershamsc.com/house-plan-library/pinewood-cottage",
+    "duval": "https://habershamsc.com/house-plan-library/duval",
+    "east beach cottage ii": "https://habershamsc.com/house-plan-library/east-beach-cottage-trx5n",
+    "palmetto cottage": "https://habershamsc.com/house-plan-library/palmetto-cottage",
+    "springdale": "https://habershamsc.com/house-plan-library/springdale",
+    "sparta ii": "https://habershamsc.com/house-plan-library/sparta",
+    "wedgewood": "https://habershamsc.com/house-plan-library/wedgewood",
+    "combahee river cottage": "https://habershamsc.com/house-plan-library/combahee",
+    "bluff cottage": "https://habershamsc.com/house-plan-library/bluff-cottage",
+    "edgefield": "https://habershamsc.com/house-plan-library/edgefield",
+    "francis davant cottage": "https://habershamsc.com/house-plan-library/francis-davant-cottage",
+    "gwinnett": "https://habershamsc.com/house-plan-library/gwinnett",
+    "lakewood": "https://habershamsc.com/house-plan-library/lakewood",
+    "abbeville": "https://habershamsc.com/house-plan-library/abbeville",
+    "goosey": "https://habershamsc.com/house-plan-library/goosey",
+    "east beach cottage": "https://habershamsc.com/house-plan-library/east-beach-cottage",
+    "radcliffe": "https://habershamsc.com/house-plan-library/radcliffe",
+    "verdier": "https://habershamsc.com/house-plan-library/verdier",
+    "chechessee river cottage": "https://habershamsc.com/house-plan-library/chechessee-river-cottage",
+    "forest brook": "https://habershamsc.com/house-plan-library/forest-brook",
+    "kingstree": "https://habershamsc.com/house-plan-library/kingstree",
+    "marketplace cottage": "https://habershamsc.com/house-plan-library/marketplace-cottage",
+    "cottageville": "https://habershamsc.com/house-plan-library/cottageville",
+    "jefferson": "https://habershamsc.com/house-plan-library/jefferson",
+    "wagener ii": "https://habershamsc.com/house-plan-library/wagener-2",
+    "bluffton ii": "https://habershamsc.com/house-plan-library/bluffton-2",
+    "lancaster": "https://habershamsc.com/house-plan-library/lancaster",
+    "landsford ii": "https://habershamsc.com/house-plan-library/landsford-2",
+    "estill": "https://habershamsc.com/house-plan-library/estill",
+    "euhaw creek": "https://habershamsc.com/house-plan-library/euhaw-creek"
+  });
+
   const FALLBACK_COLOR = "#b8b8b8";
   const AUTO_PALETTE = [
     "#457b9d",
@@ -1104,7 +1231,18 @@
 
       const output = document.createElement("dd");
       output.className = "ham-popup-value";
-      appendFormattedValue(output, value, format);
+      const planUrl = fieldId === "planName" ? getPlanLibraryUrl(value) : "";
+      if (planUrl) {
+        const link = document.createElement("a");
+        link.href = planUrl;
+        link.target = "_blank";
+        link.rel = "noopener noreferrer";
+        link.textContent = String(value);
+        link.style.textDecoration = "underline";
+        output.appendChild(link);
+      } else {
+        appendFormattedValue(output, value, format);
+      }
 
       row.append(label, output);
       grid.appendChild(row);
@@ -1139,6 +1277,16 @@
     }
 
     return root;
+  }
+
+  function getPlanLibraryUrl(value) {
+    const key = String(value == null ? "" : value)
+      .trim()
+      .replace(/\s+/g, " ")
+      .toLowerCase();
+    return Object.prototype.hasOwnProperty.call(PLAN_LIBRARY_URLS, key)
+      ? PLAN_LIBRARY_URLS[key]
+      : "";
   }
 
   function appendFormattedValue(element, value, format) {
