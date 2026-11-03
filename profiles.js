@@ -99,8 +99,8 @@ window.HAM_PROFILES = Object.freeze({
       "architect",
       "builder",
       "planName",
-      "arbFolderLink",
       "webPageUrl",
+      "arbFolderLink",
       "photoArchiveLink",
       "imageUrl"
     ],
@@ -220,8 +220,8 @@ window.HAM_PROFILES = Object.freeze({
       "architect",
       "builder",
       "planName",
-      "arbFolderLink",
       "webPageUrl",
+      "arbFolderLink",
       "photoArchiveLink",
       "imageUrl"
     ],
@@ -341,8 +341,8 @@ window.HAM_PROFILES = Object.freeze({
       "architect",
       "builder",
       "planName",
-      "arbFolderLink",
       "webPageUrl",
+      "arbFolderLink",
       "photoArchiveLink",
       "imageUrl"
     ],
@@ -462,8 +462,8 @@ window.HAM_PROFILES = Object.freeze({
       "architect",
       "builder",
       "planName",
-      "arbFolderLink",
       "webPageUrl",
+      "arbFolderLink",
       "photoArchiveLink",
       "imageUrl"
     ],
@@ -583,8 +583,8 @@ window.HAM_PROFILES = Object.freeze({
       "architect",
       "builder",
       "planName",
-      "arbFolderLink",
       "webPageUrl",
+      "arbFolderLink",
       "photoArchiveLink",
       "imageUrl"
     ],
