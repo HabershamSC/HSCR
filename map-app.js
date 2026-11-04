@@ -1,7 +1,7 @@
 (() => {
   "use strict";
 
-  const APP_VERSION = "2.0.2-url-refresh";
+  const APP_VERSION = "2.0.3-property-details";
   const FALLBACK_COLOR = "#b8b8b8";
   const AUTO_PALETTE = [
     "#457b9d",
@@ -1178,6 +1178,10 @@
       "platDimensions",
       "propertyType",
       "squareFootageHeated",
+      "bedrooms",
+      "baths",
+      "planWidth",
+      "planDepth",
       "amount",
       "updated",
       "neighborhoodZoning",

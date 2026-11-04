@@ -51,6 +51,11 @@ window.HAM_FIELDS = Object.freeze({
     allLabel: "All"
   },
 
+  bedrooms: { label: "Bedrooms", keys: ["bedrooms", "Bedrooms"] },
+  baths: { label: "Baths", keys: ["baths", "Baths"] },
+  planWidth: { label: "Width", keys: ["plan_width", "planWidth", "Width"] },
+  planDepth: { label: "Depth", keys: ["plan_depth", "planDepth", "Depth"] },
+
   squareFootageHeated: {
     label: "Square Footage (Heated)",
     keys: [
