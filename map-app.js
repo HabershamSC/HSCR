@@ -1191,6 +1191,9 @@
       "planName"
     ]);
 
+    const alwaysVisibleDetails = new Set([
+      "squareFootageHeated", "bedrooms", "baths", "planWidth", "planDepth"
+    ]);
     const grid = document.createElement("dl");
     grid.className = "ham-popup-grid";
     const actions = [];
@@ -1205,7 +1208,7 @@
       if (!definition) continue;
 
       const value = getFieldValue(record.properties, fieldId);
-      if (isBlank(value)) continue;
+      if (isBlank(value) && !alwaysVisibleDetails.has(fieldId)) continue;
 
       const format = config.format || definition.format;
 
@@ -1235,7 +1238,8 @@
 
       const output = document.createElement("dd");
       output.className = "ham-popup-value";
-      appendFormattedValue(output, value, format);
+      if (isBlank(value)) output.textContent = "—";
+      else appendFormattedValue(output, value, format);
 
       row.append(label, output);
       grid.appendChild(row);
